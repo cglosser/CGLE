@@ -1,0 +1,11 @@
+*.dat
+*.pdf
+*.out
+*.o
+*.html
+*.swp
+html/
+latex/
+tags
+*.csv
+*.mod
