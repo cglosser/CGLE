@@ -29,9 +29,9 @@ module D2Q7Const
 end module D2Q7Const
 
 module simParam
-  integer, parameter                 :: xDim   = 5
-  !for the love of god, make sure ydim is even for periodic D2Q7!
-  integer, parameter                 :: yDim   = 6
+  !for the love of god, make sure rDim is even for periodic D2Q7!
+  integer, parameter                 :: rDim   = 4
+  integer, parameter                 :: cDim   = 3
   integer, parameter                 :: tMax   = 1000
   double precision, parameter        :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
   double precision, parameter        :: tau    = 0.55d0
@@ -48,127 +48,131 @@ program cgle
 
   double precision, allocatable :: f(:,:,:), feq(:,:,:)
   double precision, allocatable :: rho(:,:), u(:,:,:), uSqr(:,:)
-  integer :: t,y
+  integer :: r
 
-  allocate(f(0:numQ -1, ydim, xdim), feq(0:numQ - 1, ydim, xdim))
-  allocate(rho(ydim, xdim), u(0:1, ydim, xdim), uSqr(ydim, xdim))
+  allocate(f(rDim,cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
+  allocate(rho(rDim, cDim), u(rDim, cDim, 0:1), uSqr(rDim, cDim))
 
-  f = 0
-  f(1,1,1) = 8
-  do t = 1, 10
-    call stream(f)
-    call computeMacros(f,rho,u,uSqr)
-    do y = 1, ydim
-      write(*,*) f(1,y,:)
-    end do
-    write(*,*)
+  f = 0d0
+  f(:,:,6) = reshape( (/1,2,3,4,5,6,7,8,9,10,11,12/), shape(f(:,:,2)))
+  do r = 1, rdim
+    write(*,*) r, "|", f(r,:,6)
+  end do
+  write(*,*)
+  call stream(f)
+  do r = 1, rdim
+    write(*,*) r, "|", f(r,:,6)
   end do
 end program cgle
 
 subroutine computeMacros(f, rho, u, uSqr)
   use D2Q7Const, only: vectors, numQ
-  use simParam,  only: xDim, yDim
+  use simParam,  only: rDim, cDim
   implicit none
 
-  double precision, intent(in)  :: f(0:numQ - 1, ydim, xdim)
-  double precision, intent(out) :: u(0:1, ydim, xdim), rho(ydim, xdim), usqr(ydim, xdim)
-  integer :: x, y
-  do x = 1, xdim
-    do y = 1, ydim
-      rho(y,x)  = sum(f(:, y, x))
-      u(0,y,x)  = sum(f(:,y,x)*vectors(0,:))
-      u(1,y,x)  = sum(f(:,y,x)*vectors(1,:))
-      uSqr(y,x) = dot_product(u(:,y,x),u(:,y,x))
+  double precision, intent(in)  :: f(rDim, cDim, 0:numQ - 1)
+  double precision, intent(out) :: u(rDim, cDim, 0:1), rho(rDim, cDim), usqr(rDim, cDim)
+  integer :: r, c
+  do c = 1, cDim
+    do r = 1, rDim
+      rho(r,c)  = sum(f(r, c, :))
+      u(r,c,0)  = sum(f(r,c,:)*vectors(0,:))
+      u(r,c,1)  = sum(f(r,c,:)*vectors(1,:))
+      uSqr(r,c) = dot_product(u(r,c,:),u(r,c,:))
     end do
   end do
 end subroutine computeMacros
 
 subroutine computeFeq(rho, feq)
-  use simParam,  only: xdim, ydim, lambda, beta
+  use simParam,  only: cDim, rDim, lambda, beta
   use D2Q7Const, only: numQ, latticeDim, soundSpeed
   implicit none
 
-  double precision, intent(in)  :: rho(ydim,xdim)
-  double precision, intent(out) :: feq(0:numQ - 1,ydim,xdim)
-  double precision :: tmp(ydim, xdim)
+  double precision, intent(in)  :: rho(rDim,cDim)
+  double precision, intent(out) :: feq(rDim,cDim,0:numQ - 1)
+  double precision :: tmp(rDim, cDim)
   integer :: dir
+
+  feq(:,:,0) = (1 - lambda*beta*latticeDim/soundSpeed**2)*rho(:,:)
 
   tmp(:,:) = lambda*beta*latticeDim/(numQ*soundSpeed**2)*rho(:,:)
   do dir = 1, numQ - 1
-    feq(dir,:,:) = tmp(:,:)
+    feq(:,:,dir) = tmp(:,:)
   end do
-  feq(0,:,:)  = (1 - lambda*beta*latticeDim/soundSpeed**2)*rho(:,:)
 end subroutine computeFeq
 
-subroutine stream(f)
-  use simParam,  only: xdim, ydim
+subroutine stream(f) !Don't dare touch this routine. THE ORDERINGS MATTER!
+  use simParam,  only: cDim, rDim
   use D2Q7Const, only: numQ
   implicit none
 
-  double precision, intent(inout) :: f(0:numQ - 1,ydim,xdim)
-  double precision :: horizontalBuffer(ydim), verticalBuffer(xdim)
+  double precision, intent(inout) :: f(rDim,cDim,0:numQ - 1)
+  double precision :: periodicHor(rDim), periodicVert(cDim)
   integer :: rowIdx
 
-  !--stream east----------------------------------
-  horizontalBuffer(:) = f(1,:,xdim)
-  f(1,:,2:xdim)       = f(1,:,1:xdim - 1)
-  f(1,:,1)            = horizontalBuffer(:)
+  !!--stream east----------------------------------
+  periodicHor(:) = f(:,cDim, 1)
+  f(:,2:cDim,1)  = f(:,1:cDim - 1, 1)
+  f(:,1, 1)      = periodicHor
 
-  !--stream northeast----------------------------
-  verticalBuffer(:) = f(2,1,:) !top row of f
-  do rowIdx = 2, ydim
-    if(modulo(rowIdx,2) .eq. 1) then
-      horizontalBuffer(rowIdx) = f(2,rowIdx,xdim)
-      f(2,rowIdx - 1,2:xdim)   = f(2,rowIdx,1:xdim-1)
-      f(2,rowIdx - 1,1)        = horizontalBuffer(rowIdx)
-    else
-      f(2,rowIdx - 1,:) = f(2,rowIdx,:)
+  !!--stream northeast----------------------------
+  periodicVert(:) = f(1,:,2) !top row of f
+  do rowIdx = 2, rDim
+    if(modulo(rowIdx,2) .eq. 1) then  !odd rows move up & right
+      periodicHor(rowIdx)    = f(cDim,rowIdx,2)
+      f(rowIdx - 1,2:cDim,2) = f(rowIdx,1:cDim-1,2)
+      f(rowIdx - 1,1,2)      = periodicHor(rowIdx)
+    else                              !even rows move straight up
+      f(rowIdx - 1,:,2) = f(rowIdx,:,2)
     end if
   end do
-  f(2,ydim,2:xdim) = verticalBuffer(1:xdim - 1)
-  f(2,ydim,1)      = verticalBuffer(xdim)
+  f(rDim,2:cDim,2) = periodicVert(1:cDim - 1)
+  f(rDim,1,2)      = periodicVert(cDim)
 
-  !--stream northwest----------------------------
-  verticalBuffer(:) = f(3,1,:) !top row of f
-  do rowIdx = 2, ydim
-    if(modulo(rowIdx,2) .eq. 1) then
-      f(3, rowIdx - 1,:) = f(3,rowIdx,:)
-    else
-      horizontalBuffer(rowIdx)   = f(3,rowIdx,1)
-      f(3,rowIdx - 1,1:xdim - 1) = f(3,rowIdx,2:xdim)
-      f(3,rowIdx - 1,xdim)       = horizontalBuffer(rowIdx)
+  !!--stream northwest----------------------------
+  periodicVert(:) = f(1,:,3) !top row of f
+  do rowIdx = 2, rDim
+    if(modulo(rowIdx,2) .eq. 1) then  !odd rows move straight up
+      f(rowIdx - 1,:,3) = f(rowIdx,:,3)
+    else                              !even rows move up & left
+      periodicHor(rowIdx)        = f(rowIdx,1,3)
+      f(rowIdx - 1,1:cDim - 1,3) = f(rowIdx,2:cDim,3)
+      f(rowIdx - 1,cDim,3)       = periodicHor(rowIdx)
     end if
   end do
-  f(3,ydim,:) = verticalBuffer(:)
+  f(rDim,:,3) = periodicVert(:)
 
-  !--stream west---------------------------------
-  horizontalBuffer(:) = f(4,:,1)
-  f(4,:,1:xdim - 1)   = f(4,:,2:xdim)
-  f(4,:,xdim)         = horizontalBuffer(:)
+  !!--stream west---------------------------------
+  periodicHor(:)      = f(:,1,4)
+  f(:,1:cDim - 1,4)   = f(:,2:cDim,4)
+  f(:,cDim,4)         = periodicHor(:)
 
-  !--stream southwest----------------------------
-  verticalBuffer(:) = f(5,ydim,:) !bottom row of f
-  do rowIdx = 1, ydim - 1
-    if(modulo(rowIdx,2) .eq. 1) then
-      f(5,rowIdx + 1,:) = f(5,rowIdx,:)
-    else
-      horizontalBuffer(rowIdx)   = f(5,rowIdx,1)
-      f(5,rowIdx + 1,1:xdim - 1) = f(5,rowIdx,2:xdim)
-      f(5,rowIdx + 1,xdim)       = horizontalBuffer(rowIdx)
+  !!--stream southwest----------------------------
+  periodicVert(:) = f(rDim,:,5) !bottom row of f
+  !this index must run backwards to avoid overwriting data
+  do rowIdx = rdim - 1, 1, -1
+    if(modulo(rowIdx,2) .eq. 1) then  !odd rows move straight down
+      f(rowIdx + 1,:,5) = f(rowIdx,:,5)
+    else                              !even rows move down & left
+      periodicHor(rowIdx)        = f(rowIdx,1,5)
+      f(rowIdx + 1,1:cDim - 1,5) = f(rowIdx,2:cDim,5)
+      f(rowIdx + 1,cDim,5)       = periodicHor(rowIdx)
     end if
   end do
-  f(5,1,:) = verticalBuffer(:)
+  f(1,1:cdim-1,5) = periodicVert(2:cdim)
+  f(1,cdim,5) = periodicVert(1)
   
-  !--stream southeast----------------------------
-  verticalBuffer(:) = f(6,ydim,:)
-  do rowIdx = 1, ydim - 1
-    if(modulo(rowIdx,2) .eq. 1) then
-      horizontalBuffer(rowIdx) = f(6,rowIdx,xdim)
-      f(6,rowIdx + 1,2:xdim)   = f(6,rowIdx,1:xdim - 1)
-      f(6,rowIdx + 1,1)        = horizontalBuffer(rowIdx)
-    else
-      f(6,rowIdx + 1,:) = f(6,rowIdx,:)
+  !!--stream southeast----------------------------
+  periodicVert(:) = f(rDim,:,6)
+  !this index must run backwards to avoid overwriting data
+  do rowIdx = rdim - 1, 1, -1
+    if(modulo(rowIdx,2) .eq. 1) then  !odd rows move down & right
+      periodicHor(rowIdx)    = f(rowIdx,cDim,6)
+      f(rowIdx + 1,2:cDim,6) = f(rowIdx,1:cDim - 1,6)
+      f(rowIdx + 1,1,6)      = periodicHor(rowIdx)
+    else                              !even rows move straight down
+      f(rowIdx + 1,:,6) = f(rowIdx,:,6)
     end if
   end do
-  f(6,1,:) = verticalBuffer(:)
+  f(1,:,6) = periodicVert(:)
 end subroutine stream
