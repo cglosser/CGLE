@@ -35,10 +35,10 @@ module simParam
   integer, parameter                 :: tMax   = 1000
   double precision, parameter        :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
   double precision, parameter        :: tau    = 0.55d0
-  double precision, parameter        :: lambda = 2d0/(deltaT*(2*tau - 1))
-  double precision, parameter        :: beta   = 2.0d-3                   ! beta = D0
-  !double precision, parameter :: a = dcmplx(0.1d0, 0.0d0)
-  !double precision, parameter :: d = dcmplx(0.025d0, 0.03d0)
+  complex(kind=kind(0d0)), parameter        :: lambda = 2d0/(deltaT*(2*tau - 1))
+  complex(kind=kind(0d0)), parameter        :: beta   = 2.0d-3                   ! beta = D0
+  !complex(kind=kind(0d0)), parameter :: a = dcmplx(0.1d0, 0.0d0)
+  !complex(kind=kind(0d0)), parameter :: d = dcmplx(0.025d0, 0.03d0)
 end module simParam
 
 program cgle
@@ -46,8 +46,8 @@ program cgle
   use D2Q7Const
   implicit none
 
-  double precision, allocatable :: f(:,:,:), feq(:,:,:)
-  double precision, allocatable :: rho(:,:), u(:,:,:), uSqr(:,:)
+  complex(kind=kind(0d0)), allocatable :: f(:,:,:), feq(:,:,:)
+  complex(kind=kind(0d0)), allocatable :: rho(:,:), u(:,:,:), uSqr(:,:)
   integer :: r
 
   allocate(f(rDim,cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
@@ -70,8 +70,8 @@ subroutine computeMacros(f, rho, u, uSqr)
   use simParam,  only: rDim, cDim
   implicit none
 
-  double precision, intent(in)  :: f(rDim, cDim, 0:numQ - 1)
-  double precision, intent(out) :: u(rDim, cDim, 0:1), rho(rDim, cDim), usqr(rDim, cDim)
+  complex(kind=kind(0d0)), intent(in)  :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=kind(0d0)), intent(out) :: u(rDim, cDim, 0:1), rho(rDim, cDim), usqr(rDim, cDim)
   integer :: r, c
   do c = 1, cDim
     do r = 1, rDim
@@ -88,9 +88,9 @@ subroutine computeFeq(rho, feq)
   use D2Q7Const, only: numQ, latticeDim, soundSpeed
   implicit none
 
-  double precision, intent(in)  :: rho(rDim,cDim)
-  double precision, intent(out) :: feq(rDim,cDim,0:numQ - 1)
-  double precision :: tmp(rDim, cDim)
+  complex(kind=kind(0d0)), intent(in)  :: rho(rDim,cDim)
+  complex(kind=kind(0d0)), intent(out) :: feq(rDim,cDim,0:numQ - 1)
+  complex(kind=kind(0d0)) :: tmp(rDim, cDim)
   integer :: dir
 
   feq(:,:,0) = (1 - lambda*beta*latticeDim/soundSpeed**2)*rho(:,:)
@@ -106,8 +106,8 @@ subroutine stream(f) !Don't dare touch this routine. THE ORDERINGS MATTER!
   use D2Q7Const, only: numQ
   implicit none
 
-  double precision, intent(inout) :: f(rDim,cDim,0:numQ - 1)
-  double precision :: periodicHor(rDim), periodicVert(cDim)
+  complex(kind=kind(0d0)), intent(inout) :: f(rDim,cDim,0:numQ - 1)
+  complex(kind=kind(0d0)) :: periodicHor(rDim), periodicVert(cDim)
   integer :: rowIdx
 
   !!--stream east----------------------------------
