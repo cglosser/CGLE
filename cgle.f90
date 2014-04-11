@@ -32,7 +32,7 @@ module simParam
   !for the love of god, make sure rDim is even for periodic D2Q7!
   integer, parameter                 :: rDim   = 231
   integer, parameter                 :: cDim   = 200
-  integer, parameter                 :: tMax   = 50
+  integer, parameter                 :: tMax   = 2500
   double precision, parameter        :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
   double precision, parameter        :: tau    = 0.55d0
   double precision, parameter        :: t0_coef= 0.3d0
@@ -57,11 +57,15 @@ program cgle
 
   call setInitialF(f)
   do time = 1, tMax
-    write(*,*) time
     call computeMacros(f, rho, omega, u, usqr)
-    call computeFeq(rho, f)
-    call collide(f, feq, omega)
+    call computeFeq(rho, feq)
+    call collide(feq, omega, f)
     call stream(f)
+
+    if(mod(time,25) .eq. 0) then
+      write(*,"(231E16.8)") real(rho)
+    end if
+    
   end do
 
 end program cgle
