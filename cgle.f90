@@ -30,8 +30,8 @@ end module D2Q7Const
 
 module simParam
   !for the love of god, make sure rDim is even for periodic D2Q7!
-  integer, parameter                 :: rDim   = 231
-  integer, parameter                 :: cDim   = 200
+  integer, parameter                 :: rDim   = 4 ! 231
+  integer, parameter                 :: cDim   = 4 ! 200
   integer, parameter                 :: tMax   = 50
   double precision, parameter        :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
   double precision, parameter        :: tau    = 0.55d0
@@ -50,26 +50,26 @@ program cgle
 
   complex(kind=kind(0d0)), allocatable :: f(:, :, :), feq(:, :, :)
   complex(kind=kind(0d0)), allocatable :: rho(:, :), u(:, :, :), uSqr(:, :), omega(:, :)
-  integer :: time, r, c
+  integer :: time, r, c, dir = 6
 
   allocate(f(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
   allocate(rho(rDim, cDim), u(rDim, cDim, 0:1), uSqr(rDim, cDim), omega(rDim, cDim))
 
-  call setInitialF(f)
-  do time = 1, tMax
-    call computeMacros(f, rho, omega, u, usqr)
-    call computeFeq(rho, fEq)
-    call collide(f, fEq, omega)
-    call stream(f)
+  !call setInitialF(f)
+  f(:,:,dir) = reshape((/ 1d0, 2d0, 3d0, 4d0, 5d0, 6d0, 7d0, 8d0, 9d0, 10d0, 11d0, 12d0,13d0,14d0,15d0,16d0/), shape(f(:,:,1)))
 
-    do c = 1, cDim
-      do r = 1, rDim
-        write(*,*) real(rho(r,c))
-      end do
-    end do
+
+  do r = 1, rDim
+    write(*,"(4F6.2)") real(f(r,:,dir))
   end do
+  write(*,*)
+  call stream(f)
 
-
+  write(*,*)
+  do r = 1, rDim
+    write(*,"(4F6.2)") real(f(r,:,dir))
+  end do
+  write(*,*)
 end program cgle
 
 subroutine computeMacros(f, rho, omega, u, uSqr)
@@ -113,80 +113,59 @@ subroutine computeFeq(rho, feq)
   end do
 end subroutine computeFeq
 
-subroutine stream(f) !Don't dare touch this routine. THE ORDERINGS MATTER!
+subroutine stream(f) 
+  ! To transform the sqare f into the hexagonal lattice it represents, 
+  ! the following code is written as if even-indexed columns shift down. I.e.:
+  !
+  ! 1 5 9 D               1   9     Directions: 
+  !                         5   D                1
+  ! 2 6 A E    becomes    2   A                2   6
+  !                         6   E                0
+  ! 3 7 B F    ------>    3   B                3   5 
+  !                         7   F                4
+  ! 4 8 C G               4   C
+  !                         8   G
+  !
+  ! Thus, the matrix must have an even number of columns, translations "up/down" 
+  ! require only a circular shift, and translation in hybrid directions require
+  ! special handling of every other column.
   use simParam,  only: cDim, rDim
   use D2Q7Const, only: numQ
   implicit none
 
   complex(kind=kind(0d0)), intent(inout) :: f(rDim, cDim,0:numQ - 1)
   complex(kind=kind(0d0)) :: periodicHor(rDim), periodicVert(cDim)
-  integer :: rowIdx
+  integer :: rowIdx, colIdx
 
-  !!--stream east----------------------------------
-  periodicHor(:) = f(:, cDim, 1)
-  f(:, 2:cDim, 1)  = f(:, 1:cDim - 1, 1)
-  f(:, 1, 1)      = periodicHor
+  !!--stream along 1------------------------------
+  f(:,:,1) = cshift(f(:,:,1), 1, dim=1)
 
-  !!--stream northeast----------------------------
-  periodicVert(:) = f(1, :, 2) !top row of f
-  do rowIdx = 2, rDim
-    if(modulo(rowIdx, 2) .eq. 1) then  !odd rows move up & right
-      periodicHor(rowIdx)    = f(rowIdx, cdim, 2)
-      f(rowIdx - 1, 2:cDim, 2) = f(rowIdx, 1:cDim-1, 2)
-      f(rowIdx - 1, 1, 2)      = periodicHor(rowIdx)
-    else                              !even rows move straight up
-      f(rowIdx - 1, :, 2) = f(rowIdx, :, 2)
-    end if
+  !!--stream along 2------------------------------
+  f(:,:,2) = cshift(f(:,:,2), 1, dim=2)
+  do colIdx = 2, cDim, 2
+    f(:, colIdx, 2) = cshift(f(:, colIdx, 2), 1, dim=1)
   end do
-  f(rDim, 2:cDim, 2) = periodicVert(1:cDim - 1)
-  f(rDim, 1, 2)      = periodicVert(cDim)
 
-  !!--stream northwest----------------------------
-  periodicVert(:) = f(1, :, 3) !top row of f
-  do rowIdx = 2, rDim
-    if(modulo(rowIdx, 2) .eq. 1) then  !odd rows move straight up
-      f(rowIdx - 1, :, 3) = f(rowIdx, :, 3)
-    else                              !even rows move up & left
-      periodicHor(rowIdx)        = f(rowIdx, 1, 3)
-      f(rowIdx - 1, 1:cDim - 1, 3) = f(rowIdx, 2:cDim, 3)
-      f(rowIdx - 1, cDim, 3)       = periodicHor(rowIdx)
-    end if
+  !!--stream along 3------------------------------
+  f(:,:,3) = cshift(f(:,:,3), 1, dim=2)
+  do colIdx = 1, cDim - 1, 2
+    f(:, colIdx, 3) = cshift(f(:, colIdx, 3), -1, dim=1)
   end do
-  f(rDim, :, 3) = periodicVert(:)
 
-  !!--stream west---------------------------------
-  periodicHor(:)      = f(:, 1, 4)
-  f(:, 1:cDim - 1, 4)   = f(:, 2:cDim, 4)
-  f(:, cDim, 4)         = periodicHor(:)
+  !!--stream along 4------------------------------
+  f(:,:,4) = cshift(f(:,:,4), -1, dim=1)
 
-  !!--stream southwest----------------------------
-  periodicVert(:) = f(rDim, :, 5) !bottom row of f
-  !this index must run backwards to avoid overwriting data
-  do rowIdx = rdim - 1, 1, -1
-    if(modulo(rowIdx, 2) .eq. 1) then  !odd rows move straight down
-      f(rowIdx + 1, :, 5) = f(rowIdx, :, 5)
-    else                              !even rows move down & left
-      periodicHor(rowIdx)        = f(rowIdx, 1, 5)
-      f(rowIdx + 1, 1:cDim - 1, 5) = f(rowIdx, 2:cDim, 5)
-      f(rowIdx + 1, cDim, 5)       = periodicHor(rowIdx)
-    end if
+  !!--stream along 5------------------------------
+  f(:,:,5) = cshift(f(:,:,5), -1, dim=2)
+  do colIdx = 1, cDim - 1, 2
+    f(:, colIdx, 5) = cshift(f(:, colIdx, 5), -1, dim=1)
   end do
-  f(1, 1:cdim-1, 5) = periodicVert(2:cdim)
-  f(1, cdim, 5) = periodicVert(1)
-  
-  !!--stream southeast----------------------------
-  periodicVert(:) = f(rDim, :, 6)
-  !this index must run backwards to avoid overwriting data
-  do rowIdx = rdim - 1, 1, -1
-    if(modulo(rowIdx, 2) .eq. 1) then  !odd rows move down & right
-      periodicHor(rowIdx)    = f(rowIdx, cDim, 6)
-      f(rowIdx + 1, 2:cDim, 6) = f(rowIdx, 1:cDim - 1, 6)
-      f(rowIdx + 1, 1, 6)      = periodicHor(rowIdx)
-    else                              !even rows move straight down
-      f(rowIdx + 1, :, 6) = f(rowIdx, :, 6)
-    end if
+
+  !!--stream along 6------------------------------
+  f(:,:,6) = cshift(f(:,:,6), -1, dim=2)
+  do colIdx = 2, cDim, 2
+    f(:, colIdx, 6) = cshift(f(:, colIdx, 6), 1, dim=1)
   end do
-  f(1, :, 6) = periodicVert(:)
 end subroutine stream
 
 subroutine collide(f, fEq, omega)
