@@ -30,8 +30,8 @@ end module D2Q7Const
 
 module simParam
   !for the love of god, make sure rDim is even for periodic D2Q7!
-  integer, parameter                 :: rDim   = 4 ! 231
-  integer, parameter                 :: cDim   = 4 ! 200
+  integer, parameter                 :: rDim   = 231
+  integer, parameter                 :: cDim   = 200
   integer, parameter                 :: tMax   = 50
   double precision, parameter        :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
   double precision, parameter        :: tau    = 0.55d0
@@ -50,26 +50,20 @@ program cgle
 
   complex(kind=kind(0d0)), allocatable :: f(:, :, :), feq(:, :, :)
   complex(kind=kind(0d0)), allocatable :: rho(:, :), u(:, :, :), uSqr(:, :), omega(:, :)
-  integer :: time, r, c, dir = 6
+  integer :: time!, r, c
 
   allocate(f(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
   allocate(rho(rDim, cDim), u(rDim, cDim, 0:1), uSqr(rDim, cDim), omega(rDim, cDim))
 
-  !call setInitialF(f)
-  f(:,:,dir) = reshape((/ 1d0, 2d0, 3d0, 4d0, 5d0, 6d0, 7d0, 8d0, 9d0, 10d0, 11d0, 12d0,13d0,14d0,15d0,16d0/), shape(f(:,:,1)))
-
-
-  do r = 1, rDim
-    write(*,"(4F6.2)") real(f(r,:,dir))
+  call setInitialF(f)
+  do time = 1, tMax
+    write(*,*) time
+    call computeMacros(f, rho, omega, u, usqr)
+    call computeFeq(rho, f)
+    call collide(f, feq, omega)
+    call stream(f)
   end do
-  write(*,*)
-  call stream(f)
 
-  write(*,*)
-  do r = 1, rDim
-    write(*,"(4F6.2)") real(f(r,:,dir))
-  end do
-  write(*,*)
 end program cgle
 
 subroutine computeMacros(f, rho, omega, u, uSqr)
@@ -123,7 +117,7 @@ subroutine stream(f)
   !                         6   E                0
   ! 3 7 B F    ------>    3   B                3   5 
   !                         7   F                4
-  ! 4 8 C G               4   C
+  ! 4 8 C G               4   C                      (0 to any equidistant)
   !                         8   G
   !
   ! Thus, the matrix must have an even number of columns, translations "up/down" 
@@ -134,8 +128,7 @@ subroutine stream(f)
   implicit none
 
   complex(kind=kind(0d0)), intent(inout) :: f(rDim, cDim,0:numQ - 1)
-  complex(kind=kind(0d0)) :: periodicHor(rDim), periodicVert(cDim)
-  integer :: rowIdx, colIdx
+  integer :: colIdx
 
   !!--stream along 1------------------------------
   f(:,:,1) = cshift(f(:,:,1), 1, dim=1)
@@ -168,13 +161,13 @@ subroutine stream(f)
   end do
 end subroutine stream
 
-subroutine collide(f, fEq, omega)
+subroutine collide(fEq, omega, f)
   use D2Q7Const, only: numQ
   use simParam,  only: rDim, cDim, tau 
   implicit none
 
-  complex(kind=kind(0d0)), intent(inout) :: f(rDim, cDim, 0:numQ - 1), &
-                                            fEq(rDim, cDim, 0:numQ - 1), &
+  complex(kind=kind(0d0)), intent(inout) :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=kind(0d0)), intent(in)    :: fEq(rDim, cDim, 0:numQ - 1), &
                                             omega(rDim, cDim)
   
   integer :: dir
