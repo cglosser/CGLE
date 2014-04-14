@@ -32,7 +32,7 @@ module simParam
   !for the love of god, make sure rDim is even for periodic D2Q7!
   integer, parameter                 :: rDim   = 231
   integer, parameter                 :: cDim   = 200
-  integer, parameter                 :: tMax   = 2500
+  integer, parameter                 :: tMax   = 5000
   double precision, parameter        :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
   double precision, parameter        :: tau    = 0.55d0
   double precision, parameter        :: t0_coef= 0.3d0
@@ -50,7 +50,7 @@ program cgle
 
   complex(kind=kind(0d0)), allocatable :: f(:, :, :), feq(:, :, :)
   complex(kind=kind(0d0)), allocatable :: rho(:, :), u(:, :, :), uSqr(:, :), omega(:, :)
-  integer :: time!, r, c
+  integer :: time, r, c
 
   allocate(f(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
   allocate(rho(rDim, cDim), u(rDim, cDim, 0:1), uSqr(rDim, cDim), omega(rDim, cDim))
@@ -63,7 +63,9 @@ program cgle
     call stream(f)
 
     if(mod(time,25) .eq. 0) then
-      write(*,"(231E16.8)") real(rho)
+      do c = 1, cDim
+        write(*,*) real(rho(:,c)), aimag(rho(:,c))
+      end do
     end if
     
   end do
@@ -75,20 +77,20 @@ subroutine computeMacros(f, rho, omega, u, uSqr)
   use simParam,  only: rDim, cDim, deltaT, a, d
   implicit none
 
-  complex(kind=kind(0d0)), intent(in)  :: f(rDim, cDim, 0:numQ - 1)
-  complex(kind=kind(0d0)), intent(out) :: rho(rDim, cDim), omega(rDim, cDim), &
-                                          u(rDim, cDim, 0:1), usqr(rDim, cDim)
-  complex(kind=kind(0d0)) :: H
+  complex(kind=kind(0d0)), intent(in)    :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=kind(0d0)), intent(out)   :: rho(rDim, cDim), omega(rDim, cDim)
+  complex(kind=kind(0d0)), intent(inout) :: u(rDim, cDim, 0:1), usqr(rDim, cDim)
+  complex(kind=kind(0d0)) :: hamiltonian
   integer :: r, c
   do c = 1, cDim
     do r = 1, rDim
       rho(r, c)   = sum(f(r, c, :))
-      u(r, c,0)   = sum(f(r, c, :)*vectors(0, :))
-      u(r, c, 1)  = sum(f(r, c, :)*vectors(1, :))
-      uSqr(r, c)  = dot_product(u(r, c, :), u(r, c, :))
+!     u(r, c,0)   = sum(f(r, c, :)*vectors(0, :))
+!     u(r, c, 1)  = sum(f(r, c, :)*vectors(1, :))
+!     uSqr(r, c)  = dot_product(u(r, c, :), u(r, c, :))
 
-      H = (a - d*rho(r,c)*conjg(rho(r,c)))*rho(r,c)
-      omega(r,c) = deltaT*H/(numQ + 1)
+      hamiltonian = (a - d*rho(r,c)*conjg(rho(r,c)))*rho(r,c)
+      omega(r,c)  = deltaT*hamiltonian/(numQ + 1)
     end do
   end do
 end subroutine computeMacros
