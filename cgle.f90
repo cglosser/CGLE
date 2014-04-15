@@ -50,24 +50,32 @@ program cgle
 
   complex(kind=kind(0d0)), allocatable :: f(:, :, :), feq(:, :, :)
   complex(kind=kind(0d0)), allocatable :: rho(:, :), u(:, :, :), uSqr(:, :), omega(:, :)
+  double precision :: sumF = 0
   integer :: time, r, c
 
   allocate(f(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
   allocate(rho(rDim, cDim), u(rDim, cDim, 0:1), uSqr(rDim, cDim), omega(rDim, cDim))
 
+  open(unit=20,file="realpart.dat")
+  open(unit=30,file="imagpart.dat")
+
   call setInitialF(f)
   do time = 1, tMax
+    write(*,*) time, sumF
     call computeMacros(f, rho, omega, u, usqr)
     call computeFeq(rho, feq)
     call collide(feq, omega, f)
     call stream(f)
 
-    if(mod(time,25) .eq. 0) then
+    sumF = sum(real(f)**2 + aimag(f)**2)
+    f = f/(sqrt(sumF/(rDim*cDim*numQ)))
+
+    if(mod(time,60) .eq. 0) then
       do c = 1, cDim
-        write(*,*) real(rho(:,c)), aimag(rho(:,c))
+        write(20,*) real(rho(:,c))
+        write(30,*) aimag(rho(:,c))
       end do
     end if
-    
   end do
 
 end program cgle
@@ -180,14 +188,11 @@ subroutine collide(fEq, omega, f)
   do dir = 0, numQ - 1
     f(:,:,dir) = f(:,:,dir) - 1/tau*(f(:,:,dir) - fEq(:,:,dir)) + omega
   end do
-  !integer :: dir, r, c
-  !do dir = 0, numQ - 1
-    !do c = 0, cDim
-      !do r = 0, rDim
-        !f(r, c, dir) = f(r, c, dir) - 1/tau*(f(r, c, dir) - fEq(r, c, dir))
-      !end do
-    !end do
-  !end do
+
+  f(:,1,:)     = f(:,2,:)
+  f(:, cDim,:) = f(:, cDim - 1,:)
+  f(1,:,:)     = f(2,:,:)
+  f(rDim,:,:)  = f(rDim - 1, :,:)
 end subroutine collide
 
 subroutine setInitialF(f)
