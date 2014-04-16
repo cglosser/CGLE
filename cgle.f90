@@ -39,7 +39,7 @@ module simParam
   double precision, parameter        :: boxLength = 10d0
   complex(kind=kind(0d0)), parameter :: lambda = 2d0/(deltaT*(2*tau - 1))
   complex(kind=kind(0d0)), parameter :: beta   = 2.0d-3                   ! beta = D0
-  complex(kind=kind(0d0)), parameter :: a = dcmplx(0.1d0, 0d0)
+  complex(kind=kind(0d0)), parameter :: a = dcmplx(0.100d0, 0.24d0)
   complex(kind=kind(0d0)), parameter :: d = dcmplx(0.025d0, 0.03d0)
 end module simParam
 
@@ -48,36 +48,27 @@ program cgle
   use D2Q7Const
   implicit none
 
-  complex(kind=kind(0d0)), allocatable :: f(:, :, :), feq(:, :, :)
-  complex(kind=kind(0d0)), allocatable :: rho(:, :), u(:, :, :), uSqr(:, :), omega(:, :)
-  double precision :: sumF = 0, time1, time2, timeTot
+  complex(kind=kind(0d0)), allocatable :: f(:, :, :), feq(:, :, :), rho(:, :), omega(:, :)
+  double precision :: sumF = 0d0
   integer :: time, r, c
 
   allocate(f(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
-  allocate(rho(rDim, cDim), u(rDim, cDim, 0:1), uSqr(rDim, cDim), omega(rDim, cDim))
+  allocate(rho(rDim, cDim), omega(rDim, cDim))
 
   open(unit=20,file="realpart.dat")
   open(unit=30,file="imagpart.dat")
 
   call setInitialF(f)
-  call computeMacros(f, rho, omega, u, usqr)
-  do r = 1, rDim
-    write(*,*) real(rho(r,1)), aimag(rho(r,1))
-  end do
-  timeTot = 0d0
+  call computeMacros(f, rho, omega)
   do time = 1, tMax
     write(*,*) time, sumF
-    call cpu_time(time1)
-    call computeMacros(f, rho, omega, u, usqr)
+    call computeMacros(f, rho, omega)
     call computeFeq(rho, feq)
     call collide(feq, omega, f)
     call stream(f)
 
     sumF = sum(real(f)**2 + aimag(f)**2)
     f = f/(sqrt(sumF/(rDim*cDim*numQ)))
-    call cpu_time(time2)
-    timeTot = timeTot + (time2 - time1)
-
     if(mod(time, 500) .eq. 0) then
       do c = 1, cDim
         write(20,*) real(rho(:,c))
@@ -86,27 +77,20 @@ program cgle
     end if
   end do
 
-  write(*,*) "Processing", rDim*cDim*tMax*1d0/timeTot, "cells-per-second."
-
 end program cgle
 
-subroutine computeMacros(f, rho, omega, u, uSqr)
+subroutine computeMacros(f, rho, omega)
   use D2Q7Const, only: vectors, numQ
   use simParam,  only: rDim, cDim, deltaT, a, d
   implicit none
 
   complex(kind=kind(0d0)), intent(in)    :: f(rDim, cDim, 0:numQ - 1)
   complex(kind=kind(0d0)), intent(out)   :: rho(rDim, cDim), omega(rDim, cDim)
-  complex(kind=kind(0d0)), intent(inout) :: u(rDim, cDim, 0:1), usqr(rDim, cDim)
   complex(kind=kind(0d0)) :: hamiltonian
   integer :: r, c
   do c = 1, cDim
     do r = 1, rDim
       rho(r, c)   = sum(f(r, c, :))
-!     u(r, c,0)   = sum(f(r, c, :)*vectors(0, :))
-!     u(r, c, 1)  = sum(f(r, c, :)*vectors(1, :))
-!     uSqr(r, c)  = dot_product(u(r, c, :), u(r, c, :))
-
       hamiltonian = (a - d*rho(r,c)*conjg(rho(r,c)))*rho(r,c)
       omega(r,c)  = deltaT*hamiltonian/numQ
     end do
@@ -217,8 +201,6 @@ subroutine setInitialF(f)
     x = cIdx*deltaX - boxLength
     do rIdx = 1, rDim
       y = rIdx*deltaX - boxLength
-      call random_number(x); call random_number(y);
-      x = x - 0.5; y = y - 0.5;
       f(rIdx, cIdx, :) = t0_coef*dcmplx(x, y)/numQ
     end do
   end do
