@@ -32,14 +32,14 @@ module simParam
   !for the love of god, make sure rDim is even for periodic D2Q7!
   integer, parameter                 :: rDim   = 231
   integer, parameter                 :: cDim   = 200
-  integer, parameter                 :: tMax   = 5000
+  integer, parameter                 :: tMax   = 1000
   double precision, parameter        :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
   double precision, parameter        :: tau    = 0.55d0
   double precision, parameter        :: t0_coef= 0.3d0
   double precision, parameter        :: boxLength = 10d0
   complex(kind=kind(0d0)), parameter :: lambda = 2d0/(deltaT*(2*tau - 1))
   complex(kind=kind(0d0)), parameter :: beta   = 2.0d-3                   ! beta = D0
-  complex(kind=kind(0d0)), parameter :: a = dcmplx(0.1d0, 0.24d0)
+  complex(kind=kind(0d0)), parameter :: a = dcmplx(0.1d0, 0d0)
   complex(kind=kind(0d0)), parameter :: d = dcmplx(0.025d0, 0.03d0)
 end module simParam
 
@@ -60,6 +60,10 @@ program cgle
   open(unit=30,file="imagpart.dat")
 
   call setInitialF(f)
+  call computeMacros(f, rho, omega, u, usqr)
+  do r = 1, rDim
+    write(*,*) real(rho(r,1)), aimag(rho(r,1))
+  end do
   do time = 1, tMax
     write(*,*) time, sumF
     call computeMacros(f, rho, omega, u, usqr)
@@ -70,7 +74,7 @@ program cgle
     sumF = sum(real(f)**2 + aimag(f)**2)
     f = f/(sqrt(sumF/(rDim*cDim*numQ)))
 
-    if(mod(time,60) .eq. 0) then
+    if(mod(time, 50) .eq. 0) then
       do c = 1, cDim
         write(20,*) real(rho(:,c))
         write(30,*) aimag(rho(:,c))
@@ -98,7 +102,7 @@ subroutine computeMacros(f, rho, omega, u, uSqr)
 !     uSqr(r, c)  = dot_product(u(r, c, :), u(r, c, :))
 
       hamiltonian = (a - d*rho(r,c)*conjg(rho(r,c)))*rho(r,c)
-      omega(r,c)  = deltaT*hamiltonian/(numQ + 1)
+      omega(r,c)  = deltaT*hamiltonian/numQ
     end do
   end do
 end subroutine computeMacros
