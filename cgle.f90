@@ -50,7 +50,7 @@ program cgle
 
   complex(kind=kind(0d0)), allocatable :: f(:, :, :), feq(:, :, :)
   complex(kind=kind(0d0)), allocatable :: rho(:, :), u(:, :, :), uSqr(:, :), omega(:, :)
-  double precision :: sumF = 0
+  double precision :: sumF = 0, time1, time2, timeTot
   integer :: time, r, c
 
   allocate(f(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
@@ -64,8 +64,10 @@ program cgle
   do r = 1, rDim
     write(*,*) real(rho(r,1)), aimag(rho(r,1))
   end do
+  timeTot = 0d0
   do time = 1, tMax
     write(*,*) time, sumF
+    call cpu_time(time1)
     call computeMacros(f, rho, omega, u, usqr)
     call computeFeq(rho, feq)
     call collide(feq, omega, f)
@@ -73,14 +75,18 @@ program cgle
 
     sumF = sum(real(f)**2 + aimag(f)**2)
     f = f/(sqrt(sumF/(rDim*cDim*numQ)))
+    call cpu_time(time2)
+    timeTot = timeTot + (time2 - time1)
 
-    if(mod(time, 50) .eq. 0) then
+    if(mod(time, 500) .eq. 0) then
       do c = 1, cDim
         write(20,*) real(rho(:,c))
         write(30,*) aimag(rho(:,c))
       end do
     end if
   end do
+
+  write(*,*) "Processing", rDim*cDim*tMax*1d0/timeTot, "cells-per-second."
 
 end program cgle
 
@@ -211,6 +217,8 @@ subroutine setInitialF(f)
     x = cIdx*deltaX - boxLength
     do rIdx = 1, rDim
       y = rIdx*deltaX - boxLength
+      call random_number(x); call random_number(y);
+      x = x - 0.5; y = y - 0.5;
       f(rIdx, cIdx, :) = t0_coef*dcmplx(x, y)/numQ
     end do
   end do
