@@ -1,12 +1,12 @@
 FC = gfortran
-FCFLAGS = -g -O3 -Wall
+FFLAGS = -g -O3 -Wall -march=native
 
 TARGETS = cgle.exe
 
 all:$(TARGETS)
 
-cgle.exe:cgle.f90
-	$(FC) $(FCFLAGS) -o $@ $<
+%.exe:%.f90
+	$(FC) $(FFLAGS) -o $@ $<
 
 .PHONY:clean
 clean:

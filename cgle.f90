@@ -51,27 +51,27 @@ program cgle
   use D2Q7Const
   implicit none
 
-  complex(kind=real64), allocatable :: f(:, :, :), feq(:, :, :), rho(:, :), omega(:, :)
+  complex(kind=real64), allocatable :: f_density(:, :, :), feq(:, :, :), rho(:, :), omega(:, :)
   real(kind=real64) :: f_rsq = 0d0
-  integer :: time, r, c
+  integer :: time, c
 
-  allocate(f(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
+  allocate(f_density(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
   allocate(rho(rDim, cDim), omega(rDim, cDim))
 
   open(unit=20,file="realpart.dat")
   open(unit=30,file="imagpart.dat")
 
   !call initRandomF(f)
-  call initSpiralF(f)
+  call initSpiralF(f_density)
   do time = 1, tMax
     write(*,*) time, f_rsq
-    call computeMacros(f, rho, omega)
+    call computeMacros(f_density, rho, omega)
     call computeFeq(rho, feq)
-    call collide(feq, omega, f)
-    call stream(f)
+    call collide(feq, omega, f_density)
+    call stream(f_density)
 
-    f_rsq = sum(real(f)**2 + aimag(f)**2)
-    f = f/sqrt(f_rsq/size(f))
+    f_rsq = sum(real(f_density)**2 + aimag(f_density)**2)
+    f_density = f_density/sqrt(f_rsq/size(f_density))
     if(mod(time, 40) .eq. 0) then
       do c = 1, cDim
         write(20,*) real(rho(:,c))
@@ -83,22 +83,22 @@ program cgle
   close(20)
   close(30)
 
-  deallocate(f, feq, rho, omega)
+  deallocate(f_density, feq, rho, omega)
 end program cgle
 
-subroutine computeMacros(f, rho, omega)
+subroutine computeMacros(f_density, rho, omega)
   use ISO_FORTRAN_ENV
   use D2Q7Const, only: vectors, numQ
   use simParam,  only: rDim, cDim, deltaT, a, d
   implicit none
 
-  complex(kind=real64), intent(in)    :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=real64), intent(in)    :: f_density(rDim, cDim, 0:numQ - 1)
   complex(kind=real64), intent(out)   :: rho(rDim, cDim), omega(rDim, cDim)
   complex(kind=real64) :: hamiltonian
   integer :: r, c
   do c = 1, cDim
     do r = 1, rDim
-      rho(r, c)   = sum(f(r, c, :))
+      rho(r, c)   = sum(f_density(r, c, :))
       hamiltonian = (a - d*rho(r,c)*conjg(rho(r,c)))*rho(r,c)
       omega(r,c)  = deltaT*hamiltonian/numQ
     end do
@@ -124,7 +124,7 @@ subroutine computeFeq(rho, feq)
   end do
 end subroutine computeFeq
 
-subroutine stream(f) 
+subroutine stream(f_density) 
   ! To transform the sqare f into the hexagonal lattice it represents, 
   ! the following code is written as if even-indexed columns shift down. I.e.:
   !
@@ -145,94 +145,94 @@ subroutine stream(f)
   use D2Q7Const, only: numQ
   implicit none
 
-  complex(kind=real64), intent(inout) :: f(rDim, cDim,0:numQ - 1)
+  complex(kind=real64), intent(inout) :: f_density(rDim, cDim,0:numQ - 1)
   integer :: colIdx
 
   !!--stream along 1------------------------------
-  f(:,:,1) = cshift(f(:,:,1), 1, dim=1)
+  f_density(:,:,1) = cshift(f_density(:,:,1), 1, dim=1)
 
   !!--stream along 2------------------------------
-  f(:,:,2) = cshift(f(:,:,2), 1, dim=2)
+  f_density(:,:,2) = cshift(f_density(:,:,2), 1, dim=2)
   do colIdx = 2, cDim, 2
-    f(:, colIdx, 2) = cshift(f(:, colIdx, 2), 1, dim=1)
+    f_density(:, colIdx, 2) = cshift(f_density(:, colIdx, 2), 1, dim=1)
   end do
 
   !!--stream along 3------------------------------
-  f(:,:,3) = cshift(f(:,:,3), 1, dim=2)
+  f_density(:,:,3) = cshift(f_density(:,:,3), 1, dim=2)
   do colIdx = 1, cDim - 1, 2
-    f(:, colIdx, 3) = cshift(f(:, colIdx, 3), -1, dim=1)
+    f_density(:, colIdx, 3) = cshift(f_density(:, colIdx, 3), -1, dim=1)
   end do
 
   !!--stream along 4------------------------------
-  f(:,:,4) = cshift(f(:,:,4), -1, dim=1)
+  f_density(:,:,4) = cshift(f_density(:,:,4), -1, dim=1)
 
   !!--stream along 5------------------------------
-  f(:,:,5) = cshift(f(:,:,5), -1, dim=2)
+  f_density(:,:,5) = cshift(f_density(:,:,5), -1, dim=2)
   do colIdx = 1, cDim - 1, 2
-    f(:, colIdx, 5) = cshift(f(:, colIdx, 5), -1, dim=1)
+    f_density(:, colIdx, 5) = cshift(f_density(:, colIdx, 5), -1, dim=1)
   end do
 
   !!--stream along 6------------------------------
-  f(:,:,6) = cshift(f(:,:,6), -1, dim=2)
+  f_density(:,:,6) = cshift(f_density(:,:,6), -1, dim=2)
   do colIdx = 2, cDim, 2
-    f(:, colIdx, 6) = cshift(f(:, colIdx, 6), 1, dim=1)
+    f_density(:, colIdx, 6) = cshift(f_density(:, colIdx, 6), 1, dim=1)
   end do
 end subroutine stream
 
-subroutine collide(fEq, omega, f)
+subroutine collide(fEq, omega, f_density)
   use ISO_FORTRAN_ENV
   use D2Q7Const, only: numQ
   use simParam,  only: rDim, cDim, tau 
   implicit none
 
-  complex(kind=real64), intent(inout) :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=real64), intent(inout) :: f_density(rDim, cDim, 0:numQ - 1)
   complex(kind=real64), intent(in)    :: fEq(rDim, cDim, 0:numQ - 1), &
                                             omega(rDim, cDim)
   
   integer :: dir
   do dir = 0, numQ - 1
-    f(:,:,dir) = f(:,:,dir) - 1/tau*(f(:,:,dir) - fEq(:,:,dir)) + omega
+    f_density(:,:,dir) = f_density(:,:,dir) - 1/tau*(f_density(:,:,dir) - fEq(:,:,dir)) + omega
   end do
 
   ! Neumann boundary conditions
-  f(:,1,:)     = f(:,2,:)
-  f(:, cDim,:) = f(:, cDim - 1,:)
-  f(1,:,:)     = f(2,:,:)
-  f(rDim,:,:)  = f(rDim - 1, :,:)
+  f_density(:,1,:)     = f_density(:,2,:)
+  f_density(:, cDim,:) = f_density(:, cDim - 1,:)
+  f_density(1,:,:)     = f_density(2,:,:)
+  f_density(rDim,:,:)  = f_density(rDim - 1, :,:)
 end subroutine collide
 
-subroutine initSpiralF(f)
+subroutine initSpiralF(f_density)
   use ISO_FORTRAN_ENV
   use D2Q7Const, only: numQ
   use simParam,  only: rDim, cDim, t0_coef, deltaX, boxLength
   implicit none
 
-  complex(kind=real64), intent(out) :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=real64), intent(out) :: f_density(rDim, cDim, 0:numQ - 1)
   integer :: rIdx, cIdx
   real(kind=real64) :: x, y
   do cIdx = 1, cDim
     x = cIdx*deltaX - boxLength/2
     do rIdx = 1, rDim
       y = rIdx*deltaX - boxLength/2
-      f(rIdx, cIdx, :) = t0_coef*dcmplx(x, y)/numQ
+      f_density(rIdx, cIdx, :) = t0_coef*dcmplx(x, y)/numQ
     end do
   end do
 end subroutine initSpiralF
 
-subroutine initRandomF(f)
+subroutine initRandomF(f_density)
   use ISO_FORTRAN_ENV
   use D2Q7Const, only: numQ
   use simParam,  only: rDim, cDim, t0_coef, deltaX, boxLength
   implicit none
   
-  complex(kind=real64), intent(out) :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=real64), intent(out) :: f_density(rDim, cDim, 0:numQ - 1)
   integer :: rIdx, cIdx
   real(kind=real64) :: rands(2)
   do cIdx = 1, cDim
     do rIdx = 1, rDim
       call random_number(rands)
       rands = rands - 0.5d0
-      f(rIdx, cIdx, :) = t0_coef*dcmplx(rands(1), rands(2))/numQ
+      f_density(rIdx, cIdx, :) = t0_coef*dcmplx(rands(1), rands(2))/numQ
     end do
   end do
 end subroutine initRandomF
