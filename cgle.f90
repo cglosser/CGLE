@@ -1,54 +1,58 @@
 module D2Q9Const
-  double precision, parameter :: pi = 4*datan(1d0)
+  use ISO_FORTRAN_ENV
+  real(kind=real64), parameter :: pi = 4*datan(1d0)
   integer, parameter :: numQ = 9
-  double precision, parameter :: weights(0:numQ - 1) = &
+  real(kind=real64), parameter :: weights(0:numQ - 1) = &
     (/ 4.0d0/9.0d0,  1.0d0/9.0d0,  1.0d0/9.0d0,  &
        1.0d0/9.0d0,  1.0d0/9.0d0,  1.0d0/36.0d0, &
        1.0d0/36.0d0, 1.0d0/36.0d0, 1.0d0/36.0d0 /)
   integer, parameter :: vectors(0:1,0:numQ - 1) = &
     reshape((/0,0, 1,0,0, 1,-1,0,0,-1, 1, 1,-1, 1,-1,-1, 1,-1/), shape(vectors))
-  double precision, parameter :: magnitudes(0:numQ - 1) = &
+  real(kind=real64), parameter :: magnitudes(0:numQ - 1) = &
     (/0d0, 1d0, 1d0, 1d0, 1d0, dsqrt(2d0), dsqrt(2d0), dsqrt(2d0), dsqrt(2d0)/)
   integer, parameter :: reverse(0:numQ - 1) = (/0, 3, 4, 1, 2, 7, 8, 5, 6/)
   integer, parameter :: latticeDim = 2
 end module D2Q9Const
 
 module D2Q7Const
-  double precision, parameter :: pi = 4*datan(1d0)
+  use ISO_FORTRAN_ENV
+  real(real64), parameter :: pi = 4*datan(1d0)
   integer, parameter          :: numQ = 7
-  double precision, parameter :: weights(0:numQ - 1) = &
+  real(kind=real64), parameter :: weights(0:numQ - 1) = &
     (/1d0/2d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0 /)
-  double precision, parameter :: vectors(0:1,0:numQ - 1) = reshape(        &
+  real(kind=real64), parameter :: vectors(0:1,0:numQ - 1) = reshape(        &
     (/ 0d0,0d0, 1d0,0d0, dcos(pi/3), dsin(pi/3), dcos(2*pi/3), dsin(2*pi/3), &
       -1d0,0d0, dcos(4*pi/3), dsin(4*pi/3), dcos(5*pi/3), dsin(5*pi/3) /),   &
       shape(vectors))
-  double precision, parameter :: soundSpeed = 2d0
+  real(kind=real64), parameter :: soundSpeed = 2d0
   integer, parameter :: reverse(0:numQ - 1) = (/0, 4, 5, 6, 1, 2, 3/)
   integer, parameter :: latticeDim = 2
 end module D2Q7Const
 
 module simParam
+  use ISO_FORTRAN_ENV
   ! Make sure cDim is even for periodic D2Q7!
   integer, parameter                 :: rDim   = 231
   integer, parameter                 :: cDim   = 200
   integer, parameter                 :: tMax   = 2400
-  double precision, parameter        :: boxLength = 10d0
-  double precision, parameter        :: deltaX = boxLength/rDim, deltaT = 0.05d0   ! dT = knudsen #
-  double precision, parameter        :: tau    = 0.55d0
-  double precision, parameter        :: t0_coef= 0.3d0
-  complex(kind=kind(0d0)), parameter :: lambda = 2d0/(deltaT*(2*tau - 1))
-  complex(kind=kind(0d0)), parameter :: beta   = 2.0d-3                   ! beta = D0
-  complex(kind=kind(0d0)), parameter :: a = dcmplx(0.100d0, 0.00d0)
-  complex(kind=kind(0d0)), parameter :: d = dcmplx(0.025d0, 0.03d0)
+  real(kind=real64), parameter        :: boxLength = 10d0
+  real(kind=real64), parameter        :: deltaX = boxLength/rDim, deltaT = 0.05d0   ! dT = knudsen #
+  real(kind=real64), parameter        :: tau    = 0.55d0
+  real(kind=real64), parameter        :: t0_coef= 0.3d0
+  complex(kind=real64), parameter :: lambda = 2d0/(deltaT*(2*tau - 1))
+  complex(kind=real64), parameter :: beta   = 2.0d-3                   ! beta = D0
+  complex(kind=real64), parameter :: a = dcmplx(0.100d0, 0.00d0)
+  complex(kind=real64), parameter :: d = dcmplx(0.025d0, 0.03d0)
 end module simParam
 
 program cgle
+  use ISO_FORTRAN_ENV
   use simParam
   use D2Q7Const
   implicit none
 
-  complex(kind=kind(0d0)), allocatable :: f(:, :, :), feq(:, :, :), rho(:, :), omega(:, :)
-  double precision :: f_rsq = 0d0
+  complex(kind=real64), allocatable :: f(:, :, :), feq(:, :, :), rho(:, :), omega(:, :)
+  real(kind=real64) :: f_rsq = 0d0
   integer :: time, r, c
 
   allocate(f(rDim, cDim,0:numQ - 1), feq(rDim, cDim,0:numQ - 1))
@@ -76,16 +80,21 @@ program cgle
     end if
   end do
 
+  close(20)
+  close(30)
+
+  deallocate(f, feq, rho, omega)
 end program cgle
 
 subroutine computeMacros(f, rho, omega)
+  use ISO_FORTRAN_ENV
   use D2Q7Const, only: vectors, numQ
   use simParam,  only: rDim, cDim, deltaT, a, d
   implicit none
 
-  complex(kind=kind(0d0)), intent(in)    :: f(rDim, cDim, 0:numQ - 1)
-  complex(kind=kind(0d0)), intent(out)   :: rho(rDim, cDim), omega(rDim, cDim)
-  complex(kind=kind(0d0)) :: hamiltonian
+  complex(kind=real64), intent(in)    :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=real64), intent(out)   :: rho(rDim, cDim), omega(rDim, cDim)
+  complex(kind=real64) :: hamiltonian
   integer :: r, c
   do c = 1, cDim
     do r = 1, rDim
@@ -97,13 +106,14 @@ subroutine computeMacros(f, rho, omega)
 end subroutine computeMacros
 
 subroutine computeFeq(rho, feq)
+  use ISO_FORTRAN_ENV
   use simParam,  only: cDim, rDim, lambda, beta
   use D2Q7Const, only: numQ, latticeDim, soundSpeed
   implicit none
 
-  complex(kind=kind(0d0)), intent(in)  :: rho(rDim, cDim)
-  complex(kind=kind(0d0)), intent(out) :: feq(rDim, cDim,0:numQ - 1)
-  complex(kind=kind(0d0)) :: tmp(rDim, cDim)
+  complex(kind=real64), intent(in)  :: rho(rDim, cDim)
+  complex(kind=real64), intent(out) :: feq(rDim, cDim,0:numQ - 1)
+  complex(kind=real64) :: tmp(rDim, cDim)
   integer :: dir
 
   feq(:, :,0) = (1 - lambda*beta*latticeDim/soundSpeed**2)*rho(:, :)
@@ -130,11 +140,12 @@ subroutine stream(f)
   ! Thus, the matrix must have an even number of columns, translations "up/down" 
   ! require only a circular shift, and translation in hybrid directions require
   ! special handling of every other column.
+  use ISO_FORTRAN_ENV
   use simParam,  only: cDim, rDim
   use D2Q7Const, only: numQ
   implicit none
 
-  complex(kind=kind(0d0)), intent(inout) :: f(rDim, cDim,0:numQ - 1)
+  complex(kind=real64), intent(inout) :: f(rDim, cDim,0:numQ - 1)
   integer :: colIdx
 
   !!--stream along 1------------------------------
@@ -169,12 +180,13 @@ subroutine stream(f)
 end subroutine stream
 
 subroutine collide(fEq, omega, f)
+  use ISO_FORTRAN_ENV
   use D2Q7Const, only: numQ
   use simParam,  only: rDim, cDim, tau 
   implicit none
 
-  complex(kind=kind(0d0)), intent(inout) :: f(rDim, cDim, 0:numQ - 1)
-  complex(kind=kind(0d0)), intent(in)    :: fEq(rDim, cDim, 0:numQ - 1), &
+  complex(kind=real64), intent(inout) :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=real64), intent(in)    :: fEq(rDim, cDim, 0:numQ - 1), &
                                             omega(rDim, cDim)
   
   integer :: dir
@@ -190,13 +202,14 @@ subroutine collide(fEq, omega, f)
 end subroutine collide
 
 subroutine initSpiralF(f)
+  use ISO_FORTRAN_ENV
   use D2Q7Const, only: numQ
   use simParam,  only: rDim, cDim, t0_coef, deltaX, boxLength
   implicit none
 
-  complex(kind=kind(0d0)), intent(out) :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=real64), intent(out) :: f(rDim, cDim, 0:numQ - 1)
   integer :: rIdx, cIdx
-  double precision :: x, y
+  real(kind=real64) :: x, y
   do cIdx = 1, cDim
     x = cIdx*deltaX - boxLength/2
     do rIdx = 1, rDim
@@ -207,13 +220,14 @@ subroutine initSpiralF(f)
 end subroutine initSpiralF
 
 subroutine initRandomF(f)
+  use ISO_FORTRAN_ENV
   use D2Q7Const, only: numQ
   use simParam,  only: rDim, cDim, t0_coef, deltaX, boxLength
   implicit none
   
-  complex(kind=kind(0d0)), intent(out) :: f(rDim, cDim, 0:numQ - 1)
+  complex(kind=real64), intent(out) :: f(rDim, cDim, 0:numQ - 1)
   integer :: rIdx, cIdx
-  double precision :: rands(2)
+  real(kind=real64) :: rands(2)
   do cIdx = 1, cDim
     do rIdx = 1, rDim
       call random_number(rands)
