@@ -34,7 +34,7 @@ module simParam
   ! Make sure cDim is even for periodic D2Q7!
   integer, parameter              :: rDim   = 231
   integer, parameter              :: cDim   = 200
-  integer, parameter              :: tMax   = 2400
+  integer, parameter              :: tMax   = 5000
   real(kind=real64), parameter    :: boxLength = 10d0
   real(kind=real64), parameter    :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
   real(kind=real64), parameter    :: tau    = 0.55d0
@@ -61,7 +61,7 @@ program cgle
   open(unit=20,file="realpart.dat")
   open(unit=30,file="imagpart.dat")
 
-  !call initRandomF(f)
+  !call initRandomF(f_density)
   call initSpiralF(f_density)
   do time = 1, tMax
     write(*,*) time, f_rsq
@@ -72,7 +72,7 @@ program cgle
 
     f_rsq = sum(real(f_density)**2 + aimag(f_density)**2)
     f_density = f_density/sqrt(f_rsq/size(f_density))
-    if(mod(time, 40) .eq. 0) then
+    if(mod(time, 300) .eq. 0) then
       do c = 1, cDim
         write(20,*) real(rho(:,c))
         write(30,*) aimag(rho(:,c))
@@ -195,10 +195,10 @@ subroutine collide(fEq, omega, f_density)
   end do
 
   ! Neumann boundary conditions
-  f_density(:,1,:)     = f_density(:,2,:)
-  f_density(:, cDim,:) = f_density(:, cDim - 1,:)
-  f_density(1,:,:)     = f_density(2,:,:)
-  f_density(rDim,:,:)  = f_density(rDim - 1, :,:)
+  !f_density(:,1,:)     = f_density(:,2,:)
+  !f_density(:, cDim,:) = f_density(:, cDim - 1,:)
+  !f_density(1,:,:)     = f_density(2,:,:)
+  !f_density(rDim,:,:)  = f_density(rDim - 1, :,:)
 end subroutine collide
 
 subroutine initSpiralF(f_density)
