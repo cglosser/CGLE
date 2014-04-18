@@ -32,13 +32,13 @@ end module D2Q7Const
 module simParam
   use ISO_FORTRAN_ENV
   ! Make sure cDim is even for periodic D2Q7!
-  integer, parameter                 :: rDim   = 231
-  integer, parameter                 :: cDim   = 200
-  integer, parameter                 :: tMax   = 2400
-  real(kind=real64), parameter        :: boxLength = 10d0
-  real(kind=real64), parameter        :: deltaX = boxLength/rDim, deltaT = 0.05d0   ! dT = knudsen #
-  real(kind=real64), parameter        :: tau    = 0.55d0
-  real(kind=real64), parameter        :: t0_coef= 0.3d0
+  integer, parameter              :: rDim   = 231
+  integer, parameter              :: cDim   = 200
+  integer, parameter              :: tMax   = 2400
+  real(kind=real64), parameter    :: boxLength = 10d0
+  real(kind=real64), parameter    :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
+  real(kind=real64), parameter    :: tau    = 0.55d0
+  real(kind=real64), parameter    :: t0_coef= 0.3d0
   complex(kind=real64), parameter :: lambda = 2d0/(deltaT*(2*tau - 1))
   complex(kind=real64), parameter :: beta   = 2.0d-3                   ! beta = D0
   complex(kind=real64), parameter :: a = dcmplx(0.100d0, 0.00d0)
@@ -211,9 +211,9 @@ subroutine initSpiralF(f_density)
   integer :: rIdx, cIdx
   real(kind=real64) :: x, y
   do cIdx = 1, cDim
-    x = cIdx*deltaX - boxLength/2
+    x = (cIdx - 1 - cDim/2)*deltaX
     do rIdx = 1, rDim
-      y = rIdx*deltaX - boxLength/2
+      y = (rIdx - 1 - rDim/2)*deltaX
       f_density(rIdx, cIdx, :) = t0_coef*dcmplx(x, y)/numQ
     end do
   end do
