@@ -33,7 +33,7 @@ module simParam
   ! Make sure cDim is even for periodic D2Q7!
   integer, parameter              :: rDim   = 100
   integer, parameter              :: cDim   = 100
-  integer, parameter              :: tMax   = 2000
+  integer, parameter              :: tMax   = 4000
   real(kind=real64), parameter    :: normalization = 1d0
   real(kind=real64), parameter    :: boxLength = 10d0
   real(kind=real64), parameter    :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
@@ -65,21 +65,22 @@ program cgle
   !call initRandomF(f_density)
   call initSpiralF(f_density)
   do time = 1, tMax
-    write(*,*) time, f_rsq
+    f_rsq = sum(real(f_density)**2 + aimag(f_density)**2)
+    f_density = f_density/sqrt(normalization*f_rsq/size(f_density))
+
     call computeMacros(f_density, rho, omega)
     call computeFeq(rho, feq)
     call collide(feq, omega, f_density)
     call stream(f_density)
 
-    f_rsq = sum(real(f_density)**2 + aimag(f_density)**2)
-    f_density = f_density/sqrt(normalization*f_rsq/size(f_density))
-    call computeMacros(f_density, rho, omega)
     if(mod(time, 20) .eq. 0) then
       do c = 1, cDim
         write(20,*) real(rho(:,c))
         write(30,*) aimag(rho(:,c))
       end do
     end if
+
+    write(*,*) time, f_rsq
   end do
 
   close(20)
@@ -138,12 +139,8 @@ subroutine stream(f_density)
   ! Neumann boundary conditions
   f_density(2:rDim - 1, 1, :)    = f_density(2:rDim - 1, 2, :)
   f_density(2:rDim - 1, cDim, :) = f_density(2:rDim - 1, cDim - 1, :)
-  f_density(1, 2:cDim - 1, :)    = f_density(2, 2:cDim - 1, :)
-  f_density(rDim, 2:cDim - 1, :) = f_density(rDim - 1, 2:cDim - 1, :)
-  f_density(1, 1, :)       = f_density(2, 2, :)
-  f_density(rDim, 1, :)    = f_density(rDim - 1, 2, :)
-  f_density(1, cDim, :)    = f_density(2, cDim - 1, :)
-  f_density(rDim, cDim, :) = f_density(rDim - 1, cDim - 1, :)
+  f_density(1, :, :)    = f_density(2, :, :)
+  f_density(rdim, :, :) = f_density(rdim - 1, :, :)
 
   !!--stream along 1------------------------------
   f_density(:,:,1) = cshift(f_density(:,:,1), -1, dim=1)
