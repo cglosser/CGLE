@@ -10,7 +10,6 @@ module D2Q9Const
     reshape((/0,0, 1,0,0, 1,-1,0,0,-1, 1, 1,-1, 1,-1,-1, 1,-1/), shape(vectors))
   real(kind=real64), parameter :: magnitudes(0:numQ - 1) = &
     (/0d0, 1d0, 1d0, 1d0, 1d0, dsqrt(2d0), dsqrt(2d0), dsqrt(2d0), dsqrt(2d0)/)
-  real(kind=real64), parameter :: soundSpeed = 2d0
   integer, parameter :: reverse(0:numQ - 1) = (/0, 3, 4, 1, 2, 7, 8, 5, 6/)
 end module D2Q9Const
 
@@ -24,7 +23,6 @@ module D2Q7Const
     (/ 0d0,0d0, 1d0,0d0, dcos(pi/3), dsin(pi/3), dcos(2*pi/3), dsin(2*pi/3), &
       -1d0,0d0, dcos(4*pi/3), dsin(4*pi/3), dcos(5*pi/3), dsin(5*pi/3) /),   &
       shape(vectors))
-  real(kind=real64), parameter :: soundSpeed = 2d0
   integer, parameter :: reverse(0:numQ - 1) = (/0, 4, 5, 6, 1, 2, 3/)
 end module D2Q7Const
 
@@ -37,6 +35,7 @@ module simParam
   real(kind=real64), parameter    :: normalization = 1d0
   real(kind=real64), parameter    :: boxLength = 10d0
   real(kind=real64), parameter    :: deltaX = 0.1d0, deltaT = 0.05d0   ! dT = knudsen #
+  real(kind=real64), parameter    :: soundSpeed = deltaX/deltaT   ! dT = knudsen #
   real(kind=real64), parameter    :: tau    = 0.55d0
   real(kind=real64), parameter    :: t0_coef= 0.3d0
   complex(kind=real64), parameter :: lambda = 2d0/(deltaT*(2*tau - 1))
@@ -107,8 +106,8 @@ end subroutine computeMacros
 
 subroutine computeFeq(rho, feq)
   use ISO_FORTRAN_ENV
-  use simParam,  only: cDim, rDim, lambda, beta
-  use D2Q9Const, only: numQ, latticeDim, soundSpeed
+  use simParam,  only: cDim, rDim, lambda, beta, soundSpeed
+  use D2Q9Const, only: numQ, latticeDim
   implicit none
 
   complex(kind=real64), intent(in)  :: rho(rDim, cDim)
