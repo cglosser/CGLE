@@ -5,7 +5,7 @@ program cgle
   use CGLEvis
   implicit none
 
-  integer :: time, c
+  integer :: time
   real(kind=real64) :: f_rsq = 0d0
   complex(kind=real64), allocatable :: f_density(:, :, :), feq(:, :, :)
   complex(kind=real64), allocatable :: rho(:, :), omega(:, :)
