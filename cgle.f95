@@ -60,7 +60,7 @@ subroutine computeMacros(f_density, rho, omega)
   complex(kind=real64) :: hamiltonian(rDim, cDim)
   
   rho = sum(f_density, dim = 3)
-  hamiltonian = (a - d*rho*conjg(rho))*rho
+  hamiltonian = (a - d*abs(rho)**2)*rho
   omega = deltaT*hamiltonian/numQ
 end subroutine computeMacros
 
@@ -76,14 +76,11 @@ subroutine computeFeq(rho, feq)
   integer :: dir
 
   feq(:, :, 0) = (1 - 3*lambda*beta*latticeDim/(4*soundSpeed**2))*rho(:, :)
+  tmp(:, :)    = lambda*beta*latticeDim/((numQ - 1)*soundSpeed**2)*rho(:, :)
 
-  tmp(:, :) = lambda*beta*latticeDim/((numQ - 1)*soundSpeed**2)*rho(:, :)
-  do dir = 1, numQ - 1
-    if (dir .lt. 5) then
-      feq(:, :, dir) = tmp(:, :)
-    else
-      feq(:, :, dir) = tmp(:, :)/2d0
-    end if
+  do dir = 1, 4
+    feq(:, :, dir)     = tmp(:, :)
+    feq(:, :, dir + 4) = tmp(:, :)/2
   end do
 end subroutine computeFeq
 
@@ -135,10 +132,11 @@ subroutine collide(fEq, omega, f_density)
   complex(kind=real64), intent(inout) :: f_density(rDim, cDim, 0:numQ - 1)
   complex(kind=real64), intent(in)    :: fEq(rDim, cDim, 0:numQ - 1), &
                                          omega(rDim, cDim)
-  
+
   integer :: dir
   do dir = 0, numQ - 1
-    f_density(:,:,dir) = f_density(:,:,dir) - 1/tau*(f_density(:,:,dir) - fEq(:,:,dir)) + omega(:, :)
+    f_density(:,:,dir) = f_density(:,:,dir) - &
+      (f_density(:,:,dir) - fEq(:,:,dir))/tau + omega(:, :)
   end do
 end subroutine collide
 
