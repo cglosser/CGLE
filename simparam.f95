@@ -3,7 +3,7 @@ use ISO_FORTRAN_ENV
 ! Make sure cDim is even for periodic D2Q7!
 integer, parameter              :: rDim   = 100
 integer, parameter              :: cDim   = 100
-integer, parameter              :: tMax   = 4000
+integer, parameter              :: tMax   = 40000
 real(kind=real64), parameter    :: normalization = 1d0
 real(kind=real64), parameter    :: boxLength = 10d0
 real(kind=real64), parameter    :: deltaX = 0.1d0, deltaT = 0.05d0 ! dT = knudsen #

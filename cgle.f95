@@ -13,14 +13,13 @@ program cgle
   allocate(f_density(rDim, cDim, 0:numQ - 1), feq(rDim, cDim, 0:numQ - 1))
   allocate(rho(rDim, cDim), omega(rDim, cDim))
 
-  open(unit=20,file="realpart.dat")
-  open(unit=30,file="imagpart.dat")
-
   call plot_init()
 
-  !call initRandomF(f_density)
-  call initSpiralF(f_density)
+  call initRandomF(f_density)
+  !call initSpiralF(f_density)
   do time = 1, tMax
+    call neumannBC(f_density)
+
     f_rsq = sum(real(f_density)**2 + aimag(f_density)**2)
     f_density = f_density/sqrt(normalization*f_rsq/size(f_density))
 
@@ -29,21 +28,12 @@ program cgle
     call collide(feq, omega, f_density)
     call stream(f_density)
 
-    if(mod(time, 5) .eq. 0) then
-      !do c = 1, cDim
-        !write(20,*) real(rho(:,c))
-        !write(30,*) aimag(rho(:,c))
-      !end do
-      call plot_array(real(rho(:,:)))
-    end if
+    if(mod(time, 5) .eq. 0) call plot_array(aimag(rho(:,:)))
 
     write(*,*) time, f_rsq
   end do
 
   call plot_close()
-
-  close(20)
-  close(30)
 
   deallocate(f_density, feq, rho, omega)
 end program cgle
@@ -92,12 +82,6 @@ subroutine stream(f_density)
 
   complex(kind=real64), intent(inout) :: f_density(rDim, cDim,0:numQ - 1)
 
-  ! Neumann boundary conditions
-  f_density(2:rDim - 1, 1, :)    = f_density(2:rDim - 1, 2, :)
-  f_density(2:rDim - 1, cDim, :) = f_density(2:rDim - 1, cDim - 1, :)
-  f_density(1, :, :)    = f_density(2, :, :)
-  f_density(rdim, :, :) = f_density(rdim - 1, :, :)
-
   !!--stream along 1------------------------------
   f_density(:,:,1) = cshift(f_density(:,:,1), -1, dim=1)
 
@@ -139,6 +123,20 @@ subroutine collide(fEq, omega, f_density)
       (f_density(:,:,dir) - fEq(:,:,dir))/tau + omega(:, :)
   end do
 end subroutine collide
+
+subroutine neumannBC(f_density)
+  use ISO_FORTRAN_ENV
+  use D2Q9Const, only: numQ
+  use simParam,  only: rDim, cDim
+  implicit none
+
+  complex(kind=real64), intent(inout) :: f_density(rDim, cDim, 0:numQ - 1)
+
+  f_density(2:rDim - 1, 1, :)    = f_density(2:rDim - 1, 2, :)
+  f_density(2:rDim - 1, cDim, :) = f_density(2:rDim - 1, cDim - 1, :)
+  f_density(1, :, :)    = f_density(2, :, :)
+  f_density(rdim, :, :) = f_density(rdim - 1, :, :)
+end subroutine neumannBC
 
 subroutine initSpiralF(f_density)
   use ISO_FORTRAN_ENV
