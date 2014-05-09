@@ -114,20 +114,16 @@ subroutine stream(f_density)
   f_density(:,:,4) = cshift(f_density(:,:,4), -1, dim=2)
 
   !!--stream along 5------------------------------
-  f_density(:,:,5) = cshift(f_density(:,:,5), -1, dim=1)
-  f_density(:,:,5) = cshift(f_density(:,:,5),  1, dim=2)
+  f_density(:,:,5) = cshift(cshift(f_density(:,:,5), -1, dim=1), 1, dim=2)
 
   !!--stream along 6------------------------------
-  f_density(:,:,6) = cshift(f_density(:,:,6),  1, dim=1)
-  f_density(:,:,6) = cshift(f_density(:,:,6),  1, dim=2)
+  f_density(:,:,6) = cshift(cshift(f_density(:,:,6),  1, dim=1), 1, dim=2)
 
   !!--stream along 7------------------------------
-  f_density(:,:,7) = cshift(f_density(:,:,7),  1, dim=1)
-  f_density(:,:,7) = cshift(f_density(:,:,7), -1, dim=2)
+  f_density(:,:,7) = cshift(cshift(f_density(:,:,7),  1, dim=1), -1, dim=2)
 
   !!--stream along 7------------------------------
-  f_density(:,:,8) = cshift(f_density(:,:,8), -1, dim=1)
-  f_density(:,:,8) = cshift(f_density(:,:,8), -1, dim=2)
+  f_density(:,:,8) = cshift(cshift(f_density(:,:,8), -1, dim=1), -1, dim=2)
 end subroutine stream
 
 subroutine collide(fEq, omega, f_density)
