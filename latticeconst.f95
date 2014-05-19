@@ -19,9 +19,9 @@ module D2Q7Const
   integer, parameter           :: numQ = 7, latticeDim = 2
   real(kind=real64), parameter :: weights(0:numQ - 1) = &
     (/1d0/2d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0 /)
-  real(kind=real64), parameter :: vectors(0:1,0:numQ - 1) = reshape(        &
-    (/ 0d0,0d0, 1d0,0d0, dcos(pi/3), dsin(pi/3), dcos(2*pi/3), dsin(2*pi/3), &
-      -1d0,0d0, dcos(4*pi/3), dsin(4*pi/3), dcos(5*pi/3), dsin(5*pi/3) /),   &
+  real(kind=real64), parameter :: vectors(0:1,0:numQ - 1) = reshape(       &
+    (/ 0d0,0d0, 1d0,0d0, dcos(pi/3),dsin(pi/3), dcos(2*pi/3),dsin(2*pi/3), &
+      -1d0,0d0, dcos(4*pi/3),dsin(4*pi/3), dcos(5*pi/3),dsin(5*pi/3) /),   &
       shape(vectors))
   integer, parameter :: reverse(0:numQ - 1) = (/0, 4, 5, 6, 1, 2, 3/)
 end module D2Q7Const
