@@ -15,12 +15,12 @@ program cgle
 
   call plot_init()
 
-  call initRandomF(f_density)
-  !call initSpiralF(f_density)
+  !call initRandomF(f_density)
+  call initSpiralF(f_density)
   do time = 1, tMax
     call neumannBC(f_density)
 
-    f_rsq = sum(real(f_density)**2 + aimag(f_density)**2)
+    f_rsq = size(f_density) !sum(real(f_density)**2 + aimag(f_density)**2)
     f_density = f_density/sqrt(normalization*f_rsq/size(f_density))
 
     call computeMacros(f_density, psi, omega)
@@ -28,7 +28,7 @@ program cgle
     call collide(feq, omega, f_density)
     call stream(f_density)
 
-    if(mod(time, 5) .eq. 0) call plot_array(aimag(psi(:,:)))
+    if(mod(time, 5) .eq. 0) call plot_array(real(psi(:,:)))
 
     write(*,*) time, f_rsq
   end do
