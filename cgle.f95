@@ -8,10 +8,10 @@ program cgle
   integer :: time
   real(kind=real64) :: f_rsq = 0d0
   complex(kind=real64), allocatable :: f_density(:, :, :), feq(:, :, :)
-  complex(kind=real64), allocatable :: rho(:, :), omega(:, :)
+  complex(kind=real64), allocatable :: psi(:, :), omega(:, :)
 
   allocate(f_density(rDim, cDim, 0:numQ - 1), feq(rDim, cDim, 0:numQ - 1))
-  allocate(rho(rDim, cDim), omega(rDim, cDim))
+  allocate(psi(rDim, cDim), omega(rDim, cDim))
 
   call plot_init()
 
@@ -23,50 +23,50 @@ program cgle
     f_rsq = sum(real(f_density)**2 + aimag(f_density)**2)
     f_density = f_density/sqrt(normalization*f_rsq/size(f_density))
 
-    call computeMacros(f_density, rho, omega)
-    call computeFeq(rho, feq)
+    call computeMacros(f_density, psi, omega)
+    call computeFeq(psi, feq)
     call collide(feq, omega, f_density)
     call stream(f_density)
 
-    if(mod(time, 5) .eq. 0) call plot_array(aimag(rho(:,:)))
+    if(mod(time, 5) .eq. 0) call plot_array(aimag(psi(:,:)))
 
     write(*,*) time, f_rsq
   end do
 
   call plot_close()
 
-  deallocate(f_density, feq, rho, omega)
+  deallocate(f_density, feq, psi, omega)
 end program cgle
 
-subroutine computeMacros(f_density, rho, omega)
+subroutine computeMacros(f_density, psi, omega)
   use ISO_FORTRAN_ENV
   use D2Q9Const, only: vectors, numQ
   use simParam,  only: rDim, cDim, deltaT, a, d
   implicit none
 
   complex(kind=real64), intent(in)    :: f_density(rDim, cDim, 0:numQ - 1)
-  complex(kind=real64), intent(out)   :: rho(rDim, cDim), &
+  complex(kind=real64), intent(out)   :: psi(rDim, cDim), &
                                          omega(rDim, cDim)
   complex(kind=real64) :: hamiltonian(rDim, cDim)
   
-  rho = sum(f_density, dim = 3)
-  hamiltonian = (a - d*abs(rho)**2)*rho
+  psi = sum(f_density, dim = 3)
+  hamiltonian = (a - d*abs(psi)**2)*psi
   omega = deltaT*hamiltonian/numQ
 end subroutine computeMacros
 
-subroutine computeFeq(rho, feq)
+subroutine computeFeq(psi, feq)
   use ISO_FORTRAN_ENV
-  use simParam,  only: cDim, rDim, lambda, beta, soundSpeed
+  use simParam,  only: cDim, rDim, lambda, beta, latticeVelocity
   use D2Q9Const, only: numQ, latticeDim
   implicit none
 
-  complex(kind=real64), intent(in)  :: rho(rDim, cDim)
+  complex(kind=real64), intent(in)  :: psi(rDim, cDim)
   complex(kind=real64), intent(out) :: feq(rDim, cDim,0:numQ - 1)
   complex(kind=real64) :: tmp(rDim, cDim)
   integer :: dir
 
-  feq(:, :, 0) = (1 - 3*lambda*beta*latticeDim/(4*soundSpeed**2))*rho(:, :)
-  tmp(:, :)    = lambda*beta*latticeDim/((numQ - 1)*soundSpeed**2)*rho(:, :)
+  feq(:, :, 0) = (1 - 3*lambda*beta*latticeDim/(4*latticeVelocity**2))*psi(:, :)
+  tmp(:, :)    = lambda*beta*latticeDim/((numQ - 1)*latticeVelocity**2)*psi(:, :)
 
   do dir = 1, 4
     feq(:, :, dir)     = tmp(:, :)

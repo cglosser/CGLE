@@ -7,7 +7,7 @@ integer, parameter              :: tMax   = 40000
 real(kind=real64), parameter    :: normalization = 1d0
 real(kind=real64), parameter    :: boxLength = 10d0
 real(kind=real64), parameter    :: deltaX = 0.1d0, deltaT = 0.05d0 ! dT = knudsen #
-real(kind=real64), parameter    :: soundSpeed = deltaX/deltaT   
+real(kind=real64), parameter    :: latticeVelocity = deltaX/deltaT   
 real(kind=real64), parameter    :: tau    = 0.55d0
 real(kind=real64), parameter    :: t0_coef= 0.3d0
 complex(kind=real64), parameter :: lambda = 2d0/(deltaT*(2*tau - 1))
