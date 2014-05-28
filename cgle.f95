@@ -20,9 +20,6 @@ program cgle
   do time = 1, tMax
     call neumannBC(f_density)
 
-    f_rsq = size(f_density) !sum(real(f_density)**2 + aimag(f_density)**2)
-    f_density = f_density/sqrt(normalization*f_rsq/size(f_density))
-
     call computeMacros(f_density, psi, omega)
     call computeFeq(psi, feq)
     call collide(feq, omega, f_density)
