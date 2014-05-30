@@ -1,6 +1,7 @@
 module simParam
 use ISO_FORTRAN_ENV
 ! Make sure cDim is even for periodic D2Q7!
+real(kind=real64), parameter    :: pi = 4*datan(1d0)
 integer, parameter              :: rDim   = 100
 integer, parameter              :: cDim   = 100
 integer, parameter              :: tMax   = 10000

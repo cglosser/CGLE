@@ -1,6 +1,5 @@
 module D2Q9Const
   use ISO_FORTRAN_ENV
-  real(kind=real64), parameter :: pi = 4*datan(1d0)
   integer, parameter :: numQ = 9, latticeDim = 2
   real(kind=real64), parameter :: weights(0:numQ - 1) = &
     (/ 4.0d0/9.0d0,  1.0d0/9.0d0,  1.0d0/9.0d0,  &
@@ -15,7 +14,7 @@ end module D2Q9Const
 
 module D2Q7Const
   use ISO_FORTRAN_ENV
-  real(real64), parameter      :: pi = 4*datan(1d0)
+  use simParam, only: pi
   integer, parameter           :: numQ = 7, latticeDim = 2
   real(kind=real64), parameter :: weights(0:numQ - 1) = &
     (/1d0/2d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0, 1d0/12d0 /)
