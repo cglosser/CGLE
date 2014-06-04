@@ -2,7 +2,7 @@ rDim         100
 cDim         100
 numTimesteps 10000
 boxLength    10d0
-deltaX       0.1d0, 
+deltaX       0.1d0
 deltaT       0.05d0 
 tau          0.55d0
 t0_coef      0.3d0

@@ -28,7 +28,7 @@ program cgle
 
     if(mod(time, 5) .eq. 0) call plot_array(real(psi(:,:)))
 
-    write(*,*) time, f_rsq
+    write(*,*) time
   end do
 
   call plot_close()
