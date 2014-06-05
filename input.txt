@@ -1,5 +1,5 @@
-rDim         100
-cDim         100
+rDim         256 
+cDim         256
 numTimesteps 10000
 boxLength    10d0
 deltaX       0.1d0
