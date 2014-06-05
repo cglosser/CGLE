@@ -10,11 +10,10 @@ program cgle
   complex(kind=real64), allocatable :: psi(:, :), omega(:, :)
 
   call readSimParam("input.txt")
+  call plot_init()
 
   allocate(f_density(rDim, cDim, 0:numQ - 1), feq(rDim, cDim, 0:numQ - 1))
   allocate(psi(rDim, cDim), omega(rDim, cDim))
-
-  call plot_init()
 
   !call initRandomF(f_density)
   call initSpiralF(f_density)
@@ -63,8 +62,8 @@ subroutine computeFeq(psi, feq)
   complex(kind=real64) :: tmp(rDim, cDim)
   integer :: dir
 
-  feq(:, :, 0) = (1 - 3*lambda*beta*latticeDim/(4*latticeVelocity**2))*psi(:, :)
-  tmp(:, :)    = lambda*beta*latticeDim/((numQ - 1)*latticeVelocity**2)*psi(:, :)
+  feq(:, :, 0) =  (1 - 3*lambda*beta*latticeDim/(4*latticeVelocity**2))*psi(:,:)
+  tmp(:, :)    = lambda*beta*latticeDim/((numQ - 1)*latticeVelocity**2)*psi(:,:)
 
   do dir = 1, 4
     feq(:, :, dir)     = tmp(:, :)

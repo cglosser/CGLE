@@ -1,5 +1,6 @@
 FC = gfortran
-FFLAGS = -g -O3 -Wall -march=native -ffast-math
+#FFLAGS = -g -fcheck=all
+FFLAGS =-O3 -Wall -march=native -ffast-math
 FFLAGS += $(shell pkg-config --cflags plplotd-f95)
 LIBS = $(shell pkg-config --libs plplotd-f95)
 
