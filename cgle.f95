@@ -6,14 +6,14 @@ program cgle
   implicit none
 
   integer :: time
-  real(kind=real64) :: f_rsq = 0d0
   complex(kind=real64), allocatable :: f_density(:, :, :), feq(:, :, :)
   complex(kind=real64), allocatable :: psi(:, :), omega(:, :)
+
+  call readSimParam("input.txt")
 
   allocate(f_density(rDim, cDim, 0:numQ - 1), feq(rDim, cDim, 0:numQ - 1))
   allocate(psi(rDim, cDim), omega(rDim, cDim))
 
-  call readSimParam("input.txt")
   call plot_init()
 
   !call initRandomF(f_density)

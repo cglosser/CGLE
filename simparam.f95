@@ -3,17 +3,17 @@ module simParam
   implicit none
 
   real(kind=real64), parameter    :: pi = 4*datan(1d0)
-  integer              :: rDim = 100
-  integer              :: cDim = 100
-  integer              :: numTimesteps = 10000
-  real(kind=real64)    :: boxLength = 10d0
-  real(kind=real64)    :: deltaX = 0.1d0, deltaT = 0.05d0 ! dT = knudsen #
-  real(kind=real64)    :: tau = 0.55d0
-  real(kind=real64)    :: t0_coef= 0.3d0
+  integer              :: rDim
+  integer              :: cDim
+  integer              :: numTimesteps
+  real(kind=real64)    :: boxLength
+  real(kind=real64)    :: deltaX, deltaT
+  real(kind=real64)    :: tau
+  real(kind=real64)    :: t0_coef
   real(kind=real64)    :: latticeVelocity, lambda
-  real(kind=real64)    :: beta = 2.0d-3 ! beta = diffusion coef. 
-  complex(kind=real64) :: a = dcmplx(0.100d0, 0.00d0)
-  complex(kind=real64) :: d = dcmplx(0.025d0, 0.03d0)
+  real(kind=real64)    :: beta
+  complex(kind=real64) :: a
+  complex(kind=real64) :: d
 
 contains
 
