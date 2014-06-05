@@ -13,15 +13,13 @@ program cgle
   allocate(f_density(rDim, cDim, 0:numQ - 1), feq(rDim, cDim, 0:numQ - 1))
   allocate(psi(rDim, cDim), omega(rDim, cDim))
 
+  call readSimParam("input.txt")
   call plot_init()
 
   !call initRandomF(f_density)
   call initSpiralF(f_density)
-  do time = 1, tMax
+  do time = 1, numTimesteps
     call neumannBC(f_density)
-
-    f_rsq = size(f_density) !sum(real(f_density)**2 + aimag(f_density)**2)
-    f_density = f_density/sqrt(normalization*f_rsq/size(f_density))
 
     call computeMacros(f_density, psi, omega)
     call computeFeq(psi, feq)
@@ -30,7 +28,7 @@ program cgle
 
     if(mod(time, 5) .eq. 0) call plot_array(real(psi(:,:)))
 
-    write(*,*) time, f_rsq
+    write(*,*) time
   end do
 
   call plot_close()
@@ -141,7 +139,7 @@ end subroutine neumannBC
 subroutine initSpiralF(f_density)
   use ISO_FORTRAN_ENV
   use D2Q9Const, only: numQ
-  use simParam,  only: rDim, cDim, t0_coef, deltaX, boxLength
+  use simParam,  only: rDim, cDim, t0_coef, deltaX
   implicit none
 
   complex(kind=real64), intent(out) :: f_density(rDim, cDim, 0:numQ - 1)
@@ -159,7 +157,7 @@ end subroutine initSpiralF
 subroutine initRandomF(f_density)
   use ISO_FORTRAN_ENV
   use D2Q9Const, only: numQ
-  use simParam,  only: rDim, cDim, t0_coef, deltaX, boxLength
+  use simParam,  only: rDim, cDim, t0_coef
   implicit none
   
   complex(kind=real64), intent(out) :: f_density(rDim, cDim, 0:numQ - 1)
