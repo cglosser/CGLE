@@ -22,10 +22,11 @@ contains
     implicit none
 
     character(len=*), intent(in) :: fname
-    character(len=80) :: token
-    integer           :: readStat
+    character(len=80) :: token, style
+    integer           :: readStat, vals(8)
     real(kind=real64) :: realPart, imagPart
     open(unit=20, file=fname, action="read", iostat=readStat)
+    open(unit=30, file="simulation.log")
 
     do 
       read(20, *, iostat=readStat) token; backspace(20)
@@ -61,10 +62,20 @@ contains
       end select
     end do
 
+    deltaX = boxLength/max(rDim, cDim)
     latticeVelocity = deltaX/deltaT
     lambda = 2d0/(deltaT*(2*tau-1))
 
-    close(20)
+    call date_and_time(VALUES=vals)
+
+    style = "(A,I4,2I2.2,I3,A,I2)"
+    write(30,style) "Simulation started on ", vals(1:3),vals(5),":",vals(6)
+    write(30,"(A,I2)") "Running in mode", 1
+    write(30,*) "        delta x:", deltaX
+    write(30,*) "latticeVelocity:", latticeVelocity
+    write(30,*) "         lambda:", lambda
+
+    close(20); close(30)
   end subroutine readSimParam
 
 end module simParam
