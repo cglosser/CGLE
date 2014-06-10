@@ -3,17 +3,17 @@ module simParam
   implicit none
 
   real(kind=real64), parameter    :: pi = 4*datan(1d0)
-  integer              :: rDim = 100
-  integer              :: cDim = 100
-  integer              :: numTimesteps = 10000
-  real(kind=real64)    :: boxLength = 10d0
-  real(kind=real64)    :: deltaX = 0.1d0, deltaT = 0.05d0 ! dT = knudsen #
-  real(kind=real64)    :: tau = 0.55d0
-  real(kind=real64)    :: t0_coef= 0.3d0
+  integer              :: rDim
+  integer              :: cDim
+  integer              :: numTimesteps
+  real(kind=real64)    :: boxLength
+  real(kind=real64)    :: deltaX, deltaT
+  real(kind=real64)    :: tau
+  real(kind=real64)    :: t0_coef
   real(kind=real64)    :: latticeVelocity, lambda
-  real(kind=real64)    :: beta = 2.0d-3 ! beta = diffusion coef. 
-  complex(kind=real64) :: a = dcmplx(0.100d0, 0.00d0)
-  complex(kind=real64) :: d = dcmplx(0.025d0, 0.03d0)
+  real(kind=real64)    :: beta
+  complex(kind=real64) :: a
+  complex(kind=real64) :: d
 
 contains
 
@@ -22,10 +22,11 @@ contains
     implicit none
 
     character(len=*), intent(in) :: fname
-    character(len=80) :: token
-    integer           :: readStat
+    character(len=80) :: token, style
+    integer           :: readStat, vals(8)
     real(kind=real64) :: realPart, imagPart
     open(unit=20, file=fname, action="read", iostat=readStat)
+    open(unit=30, file="simulation.log")
 
     do 
       read(20, *, iostat=readStat) token; backspace(20)
@@ -61,10 +62,20 @@ contains
       end select
     end do
 
+    deltaX = boxLength/max(rDim, cDim)
     latticeVelocity = deltaX/deltaT
     lambda = 2d0/(deltaT*(2*tau-1))
 
-    close(20)
+    call date_and_time(VALUES=vals)
+
+    style = "(A,I4,2I2.2,I3,A,I2)"
+    write(30,style) "Simulation started on ", vals(1:3),vals(5),":",vals(6)
+    write(30,"(A,I2)") "Running in mode", 1
+    write(30,*) "        delta x:", deltaX
+    write(30,*) "latticeVelocity:", latticeVelocity
+    write(30,*) "         lambda:", lambda
+
+    close(20); close(30)
   end subroutine readSimParam
 
 end module simParam

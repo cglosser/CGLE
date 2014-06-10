@@ -1,4 +1,4 @@
-rDim         100
+rDim         100 
 cDim         100
 numTimesteps 10000
 boxLength    10d0
