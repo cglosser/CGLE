@@ -7,12 +7,14 @@ program rk4
   integer :: time
   complex(kind=real128), allocatable :: psi(:,:), hamiltonian(:,:)
 
+  call readSimParam("input.txt")
+
   allocate(psi(rDim, cDim), hamiltonian(rDim, cDim))
 
   call plot_init()
 
   call initSpiralF(psi)
-  do time = 1, tMax
+  do time = 1, numTimesteps
     call integration(psi)
 
     if (mod(time, 5) .eq. 0) call plot_array(real(psi(:,:), kind=real64))
