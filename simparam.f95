@@ -68,7 +68,7 @@ contains
 
     call date_and_time(VALUES=vals)
 
-    style = "(A,I4,2I2.2,I3,A,I2)"
+    style = "(A,I4,2I2.2,I3,A,I2.2)"
     write(30,style) "Simulation started on ", vals(1:3),vals(5),":",vals(6)
     write(30,"(A,I2)") "Running in mode", 1
     write(30,*) "        delta x:", deltaX
