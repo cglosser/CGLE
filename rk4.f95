@@ -5,19 +5,20 @@ program rk4
   implicit none
 
   integer :: time
-  complex(kind=real128), allocatable :: psi(:,:), hamiltonian(:,:)
+  complex(kind=real128), allocatable :: psi(:,:,:), hamiltonian(:,:,:)
 
   call readSimParam("input.txt")
 
-  allocate(psi(rDim, cDim), hamiltonian(rDim, cDim))
+  allocate(psi(rDim, cDim, 2), hamiltonian(rDim, cDim, 2))
 
   call plot_init()
 
-  call initSpiralF(psi)
+  !call initSpiralF(psi)
+  psi = 0d0
   do time = 1, numTimesteps
     call integration(psi)
 
-    if (mod(time, 5) .eq. 0) call plot_array(real(psi(:,:), kind=real64))
+    if (mod(time, 5) .eq. 0) call plot_array(real(psi(:,:,exciton), kind=real64))
 
     write(*,*) time, time*deltaT, sum(abs(psi)**2)
   end do
@@ -28,13 +29,19 @@ end program rk4
 
 subroutine calcMacros(psi, hamiltonian)
   use ISO_FORTRAN_ENV
-  use simParam, only: rDim, cDim, deltaX, beta, a, d
+  use simParam, only: rDim, cDim, deltaX, beta, a, d, omegaRabi, exciton, cavity
   implicit none
 
-  complex(kind=real128), intent(in)  :: psi(rDim, cDim)
-  complex(kind=real128), intent(out) :: hamiltonian(rDim, cDim)
+  complex(kind=real128), intent(in)  :: psi(rDim, cDim, 2)
+  complex(kind=real128), intent(out) :: hamiltonian(rDim, cDim, 2)
 
-  hamiltonian =   beta*laplacian(psi) + (a - d*psi*conjg(psi))*psi
+  hamiltonian(:,:,exciton) = beta(exciton)*laplacian(psi(:,:,exciton)) &
+    + (a(exciton) - d(exciton)*abs(psi(:,:,exciton))**2)*psi(:,:,exciton) &
+    + omegaRabi/2*psi(:,:,cavity)
+
+  hamiltonian(:,:,cavity) = beta(cavity)*laplacian(psi(:,:,cavity)) &
+    + (a(cavity) - d(cavity)*abs(psi(:,:,cavity))**2)*psi(:,:,cavity) &
+    + omegaRabi/2*psi(:,:,exciton)
 
   contains
     
@@ -57,10 +64,10 @@ subroutine integration(psi)
   use simParam, only: rDim, cDim, deltaT
   implicit none
 
-  complex(kind=real128), intent(inout) :: psi(rDim, cDim)
-  complex(kind=real128) :: psiPrime(rDim, cDim)
-  complex(kind=real128) :: k1(rDim, cDim), k2(rDim, cDim)
-  complex(kind=real128) :: k3(rDim, cDim), k4(rDim, cDim), psi_rsq
+  complex(kind=real128), intent(inout) :: psi(rDim, cDim, 2)
+  complex(kind=real128) :: psiPrime(rDim, cDim, 2)
+  complex(kind=real128) :: k1(rDim, cDim, 2), k2(rDim, cDim, 2)
+  complex(kind=real128) :: k3(rDim, cDim, 2), k4(rDim, cDim, 2), psi_rsq
 
   call NeumannBCs(psi)
   call calcMacros(psi, k1)

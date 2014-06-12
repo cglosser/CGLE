@@ -11,9 +11,12 @@ module simParam
   real(kind=real64)    :: tau
   real(kind=real64)    :: t0_coef
   real(kind=real64)    :: latticeVelocity, lambda
-  real(kind=real64)    :: beta
-  complex(kind=real64) :: a
-  complex(kind=real64) :: d
+  real(kind=real64)    :: beta(2)
+  complex(kind=real64) :: a(2)
+  complex(kind=real64) :: d(2)
+  real(kind=real64)    :: omegaRabi = 7.7482647
+
+  integer, parameter :: exciton = 1, cavity = 2
 
 contains
 
@@ -32,6 +35,7 @@ contains
       read(20, *, iostat=readStat) token; backspace(20)
       if(readStat .lt. 0) exit
 
+      write(*,*) trim(token)
       select case(trim(token))
         case ("rDim")
           read(20, *, iostat=readStat) token, rDim
@@ -41,8 +45,6 @@ contains
           read(20, *, iostat=readStat) token, numTimesteps
         case ("boxLength")
           read(20, *, iostat=readStat) token, boxLength
-        case ("deltaX")
-          read(20, *, iostat=readStat) token, deltaX
         case ("deltaT")
           read(20, *, iostat=readStat) token, deltaT
         case ("tau")
@@ -50,13 +52,20 @@ contains
         case ("t0_coef")
           read(20, *, iostat=readStat) token, t0_coef
         case ("beta")
-          read(20, *, iostat=readStat) token, beta
+          read(20, *, iostat=readStat) token, beta(1)
+          write(ERROR_UNIT, *) "WARNING: automatically setting beta(:) independently of read!"
+          beta(exciton) = 1.1576764d-4
+          beta(cavity)  = 1.4470954d0
         case ("a")
           read(20, *, iostat=readStat) token, realPart, imagPart
-          a = dcmplx(realPart, imagPart)
+          write(ERROR_UNIT, *) "WARNING: automatically setting a(:) independently of read!"
+          a(exciton) = dcmplx(0d0, -0.060770703)
+          a(cavity)  = dcmplx(0d0, -0.091156055)
         case ("d")
           read(20, *, iostat=readStat) token, realPart, imagPart
-          d = dcmplx(realPart, imagPart)
+          write(ERROR_UNIT, *) "WARNING: automatically setting d(:) independently of read!"
+          d(exciton) = 1d0
+          d(cavity)  = 0d0
         case default
           read(20, *) !force I/O to advance
       end select
@@ -76,6 +85,8 @@ contains
     write(30,*) "         lambda:", lambda
 
     close(20); close(30)
+
+    read(*,*)
   end subroutine readSimParam
 
 end module simParam
