@@ -34,10 +34,22 @@ subroutine calcMacros(psi, hamiltonian)
   complex(kind=real128), intent(in)  :: psi(rDim, cDim)
   complex(kind=real128), intent(out) :: hamiltonian(rDim, cDim)
 
+  hamiltonian =   beta*laplacian(psi) + (a - d*psi*conjg(psi))*psi
 
-  hamiltonian =   beta*(-2*psi + cshift(psi, -1, 1) + cshift(psi, 1, 1))/deltaX**2 &
-                + beta*(-2*psi + cshift(psi, -1, 2) + cshift(psi, 1, 2))/deltaX**2 &
-                + (a - d*psi*conjg(psi))*psi
+  contains
+    
+    function laplacian(psi) result(del_sq)
+      use ISO_FORTRAN_ENV
+      use simParam, only: rDim, cDim, deltaX
+      implicit none
+
+      complex(kind=real128), intent(in) :: psi(rDim, cDim)
+      complex(kind=real128) :: del_sq(rDim, cDim)
+
+      del_sq = (-2*psi + cshift(psi,-1,1) + cshift(psi,1,1) &
+                -2*psi + cshift(psi,-1,2) + cshift(psi,1,2))/deltaX
+    end function laplacian
+
 end subroutine calcMacros
 
 subroutine integration(psi)
