@@ -5,43 +5,44 @@ program rk4
   implicit none
 
   integer :: time
-  complex(kind=real128), allocatable :: psi(:,:,:), hamiltonian(:,:,:)
+  complex(kind=real128), allocatable :: psi(:,:,:)
+  real(kind=real64), allocatable :: laserMask(:,:)
 
   call readSimParam("input.txt")
 
-  allocate(psi(rDim, cDim, 2), hamiltonian(rDim, cDim, 2))
+  allocate(psi(rDim, cDim, 2), laserMask(rDim,cDim))
+  psi = 0d0
 
   call plot_init()
+  call initLaserMask(laserMask)
 
-  !call initSpiralF(psi)
-  psi = 0d0
   do time = 1, numTimesteps
-    call integration(psi)
+    call integration(psi, laserMask)
 
-    if (mod(time, 5) .eq. 0) call plot_array(real(psi(:,:,exciton), kind=real64))
+    if (mod(time, 1) .eq. 0) call plot_array(real(psi(:,:,exciton), kind=real64))
 
     write(*,*) time, time*deltaT, sum(abs(psi)**2)
   end do
 
   call plot_close()
-
 end program rk4
 
-subroutine calcMacros(psi, hamiltonian)
+subroutine calcMacros(psi, laserMask, hamiltonian)
   use ISO_FORTRAN_ENV
-  use simParam, only: rDim, cDim, deltaX, beta, a, d, omegaRabi, exciton, cavity
+  use simParam, only: rDim, cDim, deltaX, beta, a, d, omegaRabi, exciton, cavity, i
   implicit none
 
+  real(kind=real64), intent(in) :: laserMask(rDim, cDim)
   complex(kind=real128), intent(in)  :: psi(rDim, cDim, 2)
   complex(kind=real128), intent(out) :: hamiltonian(rDim, cDim, 2)
 
-  hamiltonian(:,:,exciton) = beta(exciton)*laplacian(psi(:,:,exciton)) &
+  hamiltonian(:,:,exciton) = -i*(-beta(exciton)*laplacian(psi(:,:,exciton)) &
     + (a(exciton) - d(exciton)*abs(psi(:,:,exciton))**2)*psi(:,:,exciton) &
-    + omegaRabi/2*psi(:,:,cavity)
+    + omegaRabi/2*psi(:,:,cavity))
 
-  hamiltonian(:,:,cavity) = beta(cavity)*laplacian(psi(:,:,cavity)) &
+  hamiltonian(:,:,cavity)  = -i*(-beta(cavity)*laplacian(psi(:,:,cavity)) &
     + (a(cavity) - d(cavity)*abs(psi(:,:,cavity))**2)*psi(:,:,cavity) &
-    + omegaRabi/2*psi(:,:,exciton)
+    + omegaRabi/2*psi(:,:,exciton) + laserMask)
 
   contains
     
@@ -59,30 +60,31 @@ subroutine calcMacros(psi, hamiltonian)
 
 end subroutine calcMacros
 
-subroutine integration(psi)
+subroutine integration(psi, laserMask)
   use ISO_FORTRAN_ENV
   use simParam, only: rDim, cDim, deltaT
   implicit none
 
+  real(kind=real64), intent(in) :: laserMask(rDim, cDim)
   complex(kind=real128), intent(inout) :: psi(rDim, cDim, 2)
   complex(kind=real128) :: psiPrime(rDim, cDim, 2)
   complex(kind=real128) :: k1(rDim, cDim, 2), k2(rDim, cDim, 2)
   complex(kind=real128) :: k3(rDim, cDim, 2), k4(rDim, cDim, 2), psi_rsq
 
   call NeumannBCs(psi)
-  call calcMacros(psi, k1)
+  call calcMacros(psi, laserMask, k1)
 
   psiPrime = psi + deltaT/2*k1
   call NeumannBCs(psiPrime)
-  call calcMacros(psiPrime, k2)
+  call calcMacros(psiPrime, laserMask, k2)
 
   psiPrime = psi + deltaT/2*k2
   call NeumannBCs(psiPrime)
-  call calcMacros(psiPrime, k3)
+  call calcMacros(psiPrime, laserMask, k3)
 
   psiPrime = psi + deltaT/2*k3
   call NeumannBCs(psiPrime)
-  call calcMacros(psiPrime, k4)
+  call calcMacros(psiPrime, laserMask, k4)
   psi = psi + deltaT*(k1 + 2*k2 + 2*k3 + k4)/6
 end subroutine integration
 
@@ -97,6 +99,41 @@ subroutine NeumannBCs(psi)
   psi(1, :)    = psi(2, :)
   psi(rdim, :) = psi(rdim - 1, :)
 end subroutine NeumannBCs
+
+subroutine initLaserMask(laserMask)
+  use ISO_FORTRAN_ENV
+  use simParam, only: rDim, cDim, deltaX, boxLength
+  implicit none
+
+  real(kind=real64), intent(out) :: laserMask(rDim, cDim)
+  real(kind=real64) :: x, y
+  integer :: row, col
+
+
+  do col = 1, cDim
+    x = (col - 1 - cDim/2)*deltaX
+    do row = 1, rDim
+      y = (row - 1 - rDim/2)*deltaX
+      laserMask(row, col) = gaussian(0d0, boxLength/4, x) &
+                           *gaussian(0d0, boxLength/4, y)
+    end do
+  end do
+
+  laserMask = 0.001*laserMask
+
+  contains
+
+  real(kind=real64) function gaussian(mu, sigma, x)
+    use ISO_FORTRAN_ENV
+    use simParam, only: pi
+    implicit none
+
+    real(kind=real64), intent(in) :: mu, sigma, x
+
+    gaussian = 1/(sigma*dsqrt(2*pi))*exp(-(x-mu)**2/(2*sigma**2))
+  end function gaussian
+
+end subroutine initLaserMask
 
 subroutine initSpiralF(psi)
   use ISO_FORTRAN_ENV

@@ -2,7 +2,8 @@ module simParam
   use ISO_FORTRAN_ENV
   implicit none
 
-  real(kind=real64), parameter    :: pi = 4*datan(1d0)
+  complex(kind=real128), parameter :: i = dcmplx(0d0,1d0)
+  real(kind=real64), parameter     :: pi = 4*datan(1d0)
   integer              :: rDim
   integer              :: cDim
   integer              :: numTimesteps
@@ -85,8 +86,6 @@ contains
     write(30,*) "         lambda:", lambda
 
     close(20); close(30)
-
-    read(*,*)
   end subroutine readSimParam
 
 end module simParam
