@@ -28,7 +28,7 @@ program cgle
     call collide(feq, omega, f_density)
     call stream(f_density)
 
-    if(mod(time, 5) .eq. 0) call plot_array(real(psi(:,:,spin_up)))
+    if(mod(time, 5) .eq. 0) call plot_array(abs(psi(:,:,spin_up))**2)
 
     write(*,*) time
   end do
@@ -41,7 +41,8 @@ end program cgle
 subroutine computeMacros(f_density, psi, omega)
   use ISO_FORTRAN_ENV
   use D2Q9Const, only: vectors, numQ
-  use simParam,  only: rDim, cDim, deltaT, a, d, numSpin
+  use simParam,  only: rDim, cDim, numSpin, deltaT, &
+                       potential, nonlinear, coupling
   implicit none
 
   complex(kind=real64), intent(in)    :: f_density(rDim, cDim, 0:numQ - 1, numSpin)
@@ -50,7 +51,8 @@ subroutine computeMacros(f_density, psi, omega)
   complex(kind=real64) :: hamiltonian(rDim, cDim, numSpin)
   
   psi = sum(f_density, dim = 3)
-  hamiltonian = (a - d*abs(psi)**2)*psi + 0.1*cshift(psi, 1, dim = 3) !<-- check this!
+  hamiltonian = (potential - nonlinear*abs(psi)**2)*psi &
+    + coupling*cshift(psi, 1, dim = 3)
   omega = deltaT*hamiltonian/numQ
 end subroutine computeMacros
 
@@ -152,7 +154,7 @@ subroutine initSpiralF(f_density)
     do rIdx = 1, rDim
       y = (rIdx - 1 - rDim/2)*deltaX
       f_density(rIdx, cIdx, :, spin_up)   = t0_coef*dcmplx(x, y)/numQ
-      f_density(rIdx, cIdx, :, spin_down) = t0_coef*dcmplx(y, x)/numQ
+      if(numSpin .eq. 2) f_density(rIdx, cIdx, :, spin_down) = t0_coef*dcmplx(y, x)/numQ
     end do
   end do
 end subroutine initSpiralF
