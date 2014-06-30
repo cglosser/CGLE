@@ -15,6 +15,10 @@ module simParam
   complex(kind=real64) :: a
   complex(kind=real64) :: d
 
+  ! Named indexing constants
+  integer, parameter :: numSpin = 2
+  integer, parameter :: spin_up = 1, spin_down = 2
+
 contains
 
   subroutine readSimParam(fname)
