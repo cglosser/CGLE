@@ -3,6 +3,7 @@ module simParam
   implicit none
 
   real(kind=real64), parameter    :: pi = 4*datan(1d0)
+  complex(kind=real64), parameter :: ii = dcmplx(0d0, 1d0)
   integer              :: rDim = -1, cDim = -1, numSpin = -1 !define these three first in the input file
   integer              :: numTimesteps
   real(kind=real64)    :: boxLength
@@ -80,20 +81,25 @@ contains
 
         case ("coupling")
           read(20, *, iostat=readStat) token, realPart, imagPart
-          coupling = dcmplx(realPart, imagPart)
-          if(numSpin .eq. -1) then
-            error_str = "WARNING: multi-component coupling constant &
-              &defined before the number of"//NEW_LINE('A')//"components; &
-              &may produce undesired results."
-            write(ERROR_UNIT, *) error_str
-            write(30, *) error_str
-          else if(numSpin .eq. 1 .and. coupling .ne. dcmplx(0d0, 0d0)) then
-            error_str = "WARNING: multi-component coupling constant &
-              &nonzero for a single-component"//NEW_LINE('A')//" simulation. &
-              &I will treat it as an addition to the potential."
-            write(ERROR_UNIT, *) error_str
-            write(30, *) error_str
-          end if
+          select case(numSpin)
+            case (-1)
+              error_str = "WARNING: multi-component coupling constant &
+                &defined before the number of"//NEW_LINE('A')//"components; &
+                &may produce undesired results."
+              write(ERROR_UNIT, *) error_str
+              write(30, *) error_str
+
+            case (1)
+              coupling = dcmplx(0d0, 0d0)
+
+            case (2)
+              coupling = dcmplx(realPart, imagPart)
+
+            case default
+              error_str = "ERROR: invalid number of spin components."
+              write(ERROR_UNIT, *) error_str
+              call exit(2)
+          end select
 
         case default
           read(20, *) !force I/O to advance
