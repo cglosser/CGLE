@@ -66,7 +66,7 @@ end subroutine computeMacros
 
 subroutine computeFeq(psi, feq)
   use ISO_FORTRAN_ENV
-  use simParam,  only: cDim, rDim, lambda, beta, latticeVelocity, numSpin
+  use simParam,  only: cDim, rDim, lambda, diffusion, latticeVelocity, numSpin
   use D2Q9Const, only: numQ, latticeDim
   implicit none
 
@@ -75,8 +75,8 @@ subroutine computeFeq(psi, feq)
   complex(kind=real64) :: tmp(rDim, cDim, numSpin)
   integer :: dir
 
-  feq(:,:,0,:) =  (1 - 3*lambda*beta*latticeDim/(4*latticeVelocity**2))*psi(:,:,:)
-  tmp(:,:,:)   = lambda*beta*latticeDim/((numQ - 1)*latticeVelocity**2)*psi(:,:,:)
+  feq(:,:,0,:) =  (1 - 3*lambda*diffusion*latticeDim/(4*latticeVelocity**2))*psi(:,:,:)
+  tmp(:,:,:)   = lambda*diffusion*latticeDim/((numQ - 1)*latticeVelocity**2)*psi(:,:,:)
 
   do dir = 1, 4
     feq(:,:,dir,:)     = tmp(:,:,:)

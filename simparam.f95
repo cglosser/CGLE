@@ -11,7 +11,7 @@ module simParam
   real(kind=real64)    :: tau
   real(kind=real64)    :: t0_coef
   real(kind=real64)    :: latticeVelocity, lambda
-  real(kind=real64)    :: beta
+  real(kind=real64)    :: diffusion 
   complex(kind=real64) :: potential 
   complex(kind=real64) :: nonlinear
   complex(kind=real64) :: coupling 
@@ -41,58 +41,58 @@ contains
       if(readStat .lt. 0) exit
 
       select case(trim(token))
-        case ("rDim")
+        case("rDim")
           read(20, *, iostat=readStat) token, rDim
 
-        case ("cDim")
+        case("cDim")
           read(20, *, iostat=readStat) token, cDim
 
-        case ("numSpin")
+        case("numSpin")
           read(20, *, iostat=readStat) token, numSpin
 
-        case ("numTimesteps")
+        case("numTimesteps")
           read(20, *, iostat=readStat) token, numTimesteps
 
-        case ("boxLength")
+        case("boxLength")
           read(20, *, iostat=readStat) token, boxLength
 
-        case ("deltaX")
+        case("deltaX")
           read(20, *, iostat=readStat) token, deltaX
 
-        case ("deltaT")
+        case("deltaT")
           read(20, *, iostat=readStat) token, deltaT
 
-        case ("tau")
+        case("tau")
           read(20, *, iostat=readStat) token, tau
 
-        case ("t0_coef")
+        case("t0_coef")
           read(20, *, iostat=readStat) token, t0_coef
 
-        case ("beta")
-          read(20, *, iostat=readStat) token, beta
+        case("diffusion")
+          read(20, *, iostat=readStat) token, diffusion
 
-        case ("potential")
+        case("potential")
           read(20, *, iostat=readStat) token, realPart, imagPart
           potential = dcmplx(realPart, imagPart)
 
-        case ("nonlinear")
+        case("nonlinear")
           read(20, *, iostat=readStat) token, realPart, imagPart
           nonlinear = dcmplx(realPart, imagPart)
 
-        case ("coupling")
+        case("coupling")
           read(20, *, iostat=readStat) token, realPart, imagPart
           select case(numSpin)
-            case (-1)
+            case(-1)
               error_str = "WARNING: multi-component coupling constant &
                 &defined before the number of"//NEW_LINE('A')//"components; &
                 &may produce undesired results."
               write(ERROR_UNIT, *) error_str
               write(30, *) error_str
 
-            case (1)
+            case(1)
               coupling = dcmplx(0d0, 0d0)
 
-            case (2)
+            case(2)
               coupling = dcmplx(realPart, imagPart)
 
             case default
