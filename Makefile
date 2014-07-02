@@ -4,11 +4,11 @@ ENABLE_VISUALIZATION=true
 FFLAGS =-O3 -Wall -march=native -ffast-math -cpp
 
 EXECUTABLE = cgle.exe
-TARGETS = latticeconst.o simparam.o cgle.o
+TARGETS = latticeconst.o simparam.o cgle.o main.o
 
 ifdef ENABLE_VISUALIZATION
-TARGETS += cglevis.o
-FFLAGS += -D VISUALIZATION=1
+TARGETS += cglevis.o				 #bulid the visualization stuff
+FFLAGS += -D VISUALIZATION=1 #add define macro for conditional compilation
 FFLAGS += $(shell pkg-config --cflags plplotd-f95)
 LIBS = $(shell pkg-config --libs plplotd-f95) 
 endif
@@ -21,7 +21,10 @@ all:$(EXECUTABLE) Makefile
 $(EXECUTABLE):$(TARGETS)
 	$(FC) $(LIBS) -o $@ $^
 
-cgle.o: cgle.f95 simparam.mod d2q9const.mod
+main.o: main.f95 simparam.mod d2q9const.mod cgle.mod
+	$(COMPILE) $<
+
+cgle.o cgle.mod: cgle.f95 d2q9const.mod simparam.mod 
 	$(COMPILE) $<
 
 cglevis.o cglevis.mod: cglevis.f95 simparam.mod
