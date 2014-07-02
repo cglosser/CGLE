@@ -18,6 +18,7 @@ module simParam
 
   ! Named indexing constants
   integer, parameter :: spin_up = 1, spin_down = 2
+  integer, parameter :: LOG_UNIT = 30
 
 contains
 
@@ -32,7 +33,7 @@ contains
     real(kind=real64)  :: realPart, imagPart
 
     open(unit=20, file=fname, action="read", iostat=readStat)
-    open(unit=30, file="simulation.log")
+    open(unit=LOG_UNIT, file="simulation.log")
 
     call date_and_time(VALUES=vals)
 
@@ -111,14 +112,14 @@ contains
     lambda = 2d0/(deltaT*(2*tau-1))
 
     date_style = "(A,I4,2I2.2,I3,A,I2.2)"
-    write(30,date_style) "Simulation started on ", vals(1:3),vals(5),":",vals(6)
-    write(30,"(A,I2,A)") "Running with", numSpin, " components."
-    write(30,*) "        delta x:", deltaX
-    write(30,*) "latticeVelocity:", latticeVelocity
-    write(30,*) "         lambda:", lambda
-    write(30,*) "     total time:", deltaT*numTimesteps
+    write(LOG_UNIT,date_style) "Simulation started on ", vals(1:3),vals(5),":",vals(6)
+    write(LOG_UNIT,"(A,I2,A)") "Running with", numSpin, " components."
+    write(LOG_UNIT,*) "        delta x:", deltaX
+    write(LOG_UNIT,*) "latticeVelocity:", latticeVelocity
+    write(LOG_UNIT,*) "         lambda:", lambda
+    write(LOG_UNIT,*) "     total time:", deltaT*numTimesteps
 
-    close(20); close(30)
+    close(20)
   end subroutine readSimParam
 
 end module simParam
