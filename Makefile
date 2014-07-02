@@ -1,21 +1,27 @@
 FC = gfortran
+ENABLE_VISUALIZATION=true
 #FFLAGS = -g -fcheck=all
-FFLAGS =-O3 -Wall -march=native -ffast-math
-FFLAGS += $(shell pkg-config --cflags plplotd-f95)
-LIBS = $(shell pkg-config --libs plplotd-f95)
+FFLAGS =-O3 -Wall -march=native -ffast-math -cpp
 
 EXECUTABLE = cgle.exe
-TARGETS = latticeconst.o simparam.o cglevis.o cgle.o
+TARGETS = latticeconst.o simparam.o cgle.o
+
+ifdef ENABLE_VISUALIZATION
+TARGETS += cglevis.o
+FFLAGS += -D VISUALIZATION=1
+FFLAGS += $(shell pkg-config --cflags plplotd-f95)
+LIBS = $(shell pkg-config --libs plplotd-f95) 
+endif
 
 COMPILE=$(FC) $(FFLAGS) -c
 
 .PHONY:all
-all:$(EXECUTABLE)
+all:$(EXECUTABLE) Makefile
 
 $(EXECUTABLE):$(TARGETS)
 	$(FC) $(LIBS) -o $@ $^
 
-cgle.o: cgle.f95 simparam.mod d2q9const.mod cglevis.mod
+cgle.o: cgle.f95 simparam.mod d2q9const.mod
 	$(COMPILE) $<
 
 cglevis.o cglevis.mod: cglevis.f95 simparam.mod

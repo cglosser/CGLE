@@ -2,7 +2,9 @@ program cgle
   use ISO_FORTRAN_ENV
   use simParam
   use D2Q9Const
+#ifdef VISUALIZATION
   use CGLEvis
+#endif
   implicit none
 
   integer :: time
@@ -10,7 +12,9 @@ program cgle
   complex(kind=real64), allocatable :: psi(:, :, :), omega(:, :, :)
 
   call readSimParam("input.txt")
+#ifdef VISUALIZATION 
   call plot_init()
+#endif
 
   allocate(f_density(rDim, cDim, 0:numQ - 1, numSpin))
   allocate(feq(rDim, cDim, 0:numQ - 1, numSpin))
@@ -28,12 +32,16 @@ program cgle
     call collide(feq, omega, f_density)
     call stream(f_density)
 
+#ifdef VISUALIZATION
     if(mod(time, 5) .eq. 0) call plot_array(abs(psi(:,:,spin_up))**2)
+#endif
 
     write(*,*) time
   end do
 
+#ifdef VISUALIZATION
   call plot_close()
+#endif
 
   deallocate(f_density, feq, psi, omega)
 end program cgle
