@@ -2,7 +2,7 @@ module simParam
   use ISO_FORTRAN_ENV
   implicit none
 
-  real(kind=real64), parameter    :: pi = 4*datan(1d0)
+  real(kind=real64),    parameter :: pi = 4*datan(1d0)
   complex(kind=real64), parameter :: ii = dcmplx(0d0, 1d0)
   integer              :: rDim = -1, cDim = -1, numSpin = -1 !define these three first in the input file
   integer              :: numTimesteps
@@ -11,7 +11,7 @@ module simParam
   real(kind=real64)    :: tau
   real(kind=real64)    :: t0_coef
   real(kind=real64)    :: latticeVelocity, lambda
-  real(kind=real64)    :: diffusion 
+  complex(kind=real64) :: diffusion 
   complex(kind=real64) :: potential 
   complex(kind=real64) :: nonlinear
   complex(kind=real64) :: coupling 
@@ -70,7 +70,8 @@ contains
           read(20, *, iostat=readStat) token, t0_coef
 
         case("diffusion")
-          read(20, *, iostat=readStat) token, diffusion
+          read(20, *, iostat=readStat) token, realPart, imagPart
+          diffusion = dcmplx(realPart, imagPart)
 
         case("potential")
           read(20, *, iostat=readStat) token, realPart, imagPart

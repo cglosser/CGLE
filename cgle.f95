@@ -141,7 +141,7 @@ module cgle
     use D2Q9Const, only: numQ
     use simParam,  only: rDim, cDim, t0_coef, numSpin, spin_up, spin_down
     implicit none
-    
+
     complex(kind=real64), intent(out) :: f_density(rDim, cDim, 0:numQ - 1, numSpin)
     integer :: rIdx, cIdx
     real(kind=real64) :: rands(2)
