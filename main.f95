@@ -9,9 +9,8 @@ program main
   implicit none
 
   integer :: time
-  complex(kind=real64), allocatable :: f_density(:,:,:,:), feq(:,:,:,:)
-  complex(kind=real64), allocatable :: psi(:,:,:), omega(:,:,:)
-  complex(kind=real64), allocatable :: polarization(:,:)
+  complex(kind=real64), allocatable :: f_density(:, :, :, :), feq(:, :, :, :)
+  complex(kind=real64), allocatable :: psi(:, :, :), omega(:, :, :)
 
   call readSimParam("input.txt")
 #ifdef VISUALIZATION 
@@ -24,11 +23,8 @@ program main
   allocate(psi(rDim, cDim, numSpin))
   allocate(omega(rDim, cDim, numSpin))
 
-  allocate(polarization(rDim, cDim))
-
-  call initRandomF(f_density)
-  !call initSpiralF(f_density)
-
+  !call initRandomF(f_density)
+  call initSpiralF(f_density)
   do time = 1, numTimesteps
     call neumannBC(f_density)
 
@@ -37,13 +33,11 @@ program main
     call collide(feq, omega, f_density)
     call stream(f_density)
 
-    polarization = spinPolarization(psi(:,:,:))
 #ifdef VISUALIZATION
-    if(mod(time, 5) .eq. 0) call plot_array(atan2(real(polarization),aimag(polarization)))
+    if(mod(time, 5) .eq. 0) call plot_array(abs(spinPolarization(psi))**2)
 #endif
 
-    write(*,*) time, minval(real(polarization)), minval(aimag(polarization))
-    write(102,*) real(polarization(rDim/2, cDim/2)), aimag(polarization(rDim/2, cDim/2))
+    write(*,*) time
   end do
 
 #ifdef VISUALIZATION

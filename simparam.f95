@@ -11,7 +11,7 @@ module simParam
   real(kind=real64)    :: tau
   real(kind=real64)    :: t0_coef
   real(kind=real64)    :: latticeVelocity, lambda
-  complex(kind=real64) :: diffusion 
+  real(kind=real64)    :: diffusion 
   complex(kind=real64) :: potential 
   complex(kind=real64) :: nonlinear
   complex(kind=real64) :: coupling 
@@ -70,8 +70,7 @@ contains
           read(20, *, iostat=readStat) token, t0_coef
 
         case("diffusion")
-          read(20, *, iostat=readStat) token, realpart, imagpart
-          diffusion = dcmplx(realPart, imagPart)
+          read(20, *, iostat=readStat) token, diffusion
 
         case("potential")
           read(20, *, iostat=readStat) token, realPart, imagPart
