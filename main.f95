@@ -34,7 +34,7 @@ program main
     call stream(f_density)
 
 #ifdef VISUALIZATION
-    if(mod(time, 5) .eq. 0) call plot_array(psi(:,:,spin_up))
+    if(mod(time, 5) .eq. 0) call plot_array( real(psi(:,:,spin_up)) )
 #endif
 
     write(*,*) time
